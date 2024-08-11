@@ -8,7 +8,7 @@ if(NOT CMAKE_CXX_STANDARD)
 endif()
 
 project(PhysicsPlus
-  VERSION 0.0.0
+  VERSION 0.10.0
   LANGUAGES CXX
 )
 
@@ -22,21 +22,48 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PHYSP_LIB_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PHYSP_LIB_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
+  if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "arm64")
+    include_directories(
+      ${PHYSP_INCL_DIR}
+      ${CMAKE_SOURCE_DIR}
+      /opt/homebrew/include
+      /usr/local/include
+    )
+
+    link_directories(
+      ${PHYSP_LIB_DIR}
+      /opt/homebrew/lib
+      /usr/local/lib
+    )
+  else()
+    include_directories(
+      ${PHYSP_INCL_DIR}
+      ${CMAKE_SOURCE_DIR}
+      /usr/local/include
+    )
+
+    link_directories(
+      ${PHYSP_LIB_DIR}
+      /usr/local/lib
+    )
+  endif()
+else()
+  include_directories(
+    ${PHYSP_INCL_DIR}
+    ${CMAKE_SOURCE_DIR}
+  )
+
+  link_directories(
+    ${PHYSP_LIB_DIR}
+  )
+endif()
+
 add_subdirectory(${CMAKE_SOURCE_DIR}/src)
-
-include_directories(
-  ${CMAKE_SOURCE_DIR}
-  /opt/homebrew/include
-  /usr/local/include
-)
-
-link_directories(
-  /opt/homebrew/lib
-  /usr/local/lib
-)
 
 add_library(physp STATIC
   $<TARGET_OBJECTS:physp.core>
+  $<TARGET_OBJECTS:physp.windows>
 )
 
 target_link_libraries(physp PRIVATE

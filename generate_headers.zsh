@@ -8,7 +8,7 @@ time=$(date "+%m-%d-%Y %H:%M:%S")
 system=$(uname -s)
 start_time=$(date +%s)
 
-deps=(map memory string)
+deps=(map memory stdexcept string type_traits)
 file=physp_decl
 proj=core
 
@@ -99,6 +99,13 @@ includes()
   input "#define VULKAN_HPP_NO_CONSTRUCTORS"
   input "#include <vulkan/vulkan_raii.hpp>"
 
+  space
+
+  input "#define GLFW_INCLUDE_NONE"
+  input "#include <GLFW/glfw3.h>"
+
+  space
+
   for dep in "${deps[@]}"; do
     input "#include <${dep}>"
   done
@@ -119,9 +126,26 @@ defines()
 forward_declarations()
 {
   input "class Context;"
-  input "class General;"
+  input "class IInterface;"
+  input "template<typename T> class Interface;"
+  input "class IWindow;"
+  input "class KeyCallback;"
   input "class Settings;"
+  input "class General;"
   input "class SettingsManager;"
+
+  space
+
+  input "namespace windows"
+  input "{"
+
+  space
+
+  input "class GLFW;"
+
+  space
+
+  input "} // namespace pp::windows"
 }
 
 log "Generating Physics+ version ${version} headers on system ${system}"
@@ -163,7 +187,23 @@ forward_declarations
 
 space
 
-read_file context
+read_file context_decl "Context"
+
+space
+
+read_file interface_decl "IInterface"
+
+space
+
+read_file interface_decl "Interface" 1
+
+space
+
+read_file iwindow_decl "IWindow"
+
+space
+
+read_file iwindow_decl "KeyCallback"
 
 space
 
@@ -175,10 +215,26 @@ read_file settings_decl "General : public Settings"
 
 space
 
+read_file settings_decl "Window : public Settings"
+
+space
+
 read_file settings_decl "SettingsManager"
 
 space
 
+proj=windows
+
+input "namespace windows"
+input "{"
+
+space
+
+read_file glfw "GLFW : public IWindow"
+
+space
+
+input "} // namespace pp::windows"
 input "} // namespace pp"
 
 space
@@ -190,6 +246,7 @@ input "#endif // physp_decl_hpp" 0
 ########################
 
 file=physp
+proj=core
 
 log "Generating ${file}.hpp"
 
@@ -207,13 +264,16 @@ input "#include \"./physp_decl.hpp\""
 
 space
 
-input "#include <stdexcept>"
-input "#include <type_traits>"
+input "namespace pp"
+input "{"
 
 space
 
-input "namespace pp"
-input "{"
+read_numbered context 9 17
+
+space
+
+read_numbered interface 9 31
 
 space
 

@@ -1,29 +1,20 @@
 #ifndef physp_core_context_hpp
 #define physp_core_context_hpp
 
-#include <vulkan/vulkan_raii.hpp>
+#include "src/core/include/context_decl.hpp"
 
 namespace pp
 {
 
-class Context
+template <typename T>
+void Context::set_interface()
 {
-  public:
-    Context();
-    Context(Context&) = delete;
-    Context(Context&&) = delete;
+  static_assert(std::is_base_of<IWindow, T>::value,
+    "pp::Context: attempted to set interface to non-window type"
+  );
 
-    ~Context() = default;
-
-    Context& operator = (Context&) = delete;
-    Context& operator = (Context&&) = delete;
-
-  private:
-    void createInstance();
-
-  private:
-    vk::raii::Instance vk_instance = nullptr;
-};
+  p_interface = std::make_shared<T>();
+}
 
 } // namespace pp
 

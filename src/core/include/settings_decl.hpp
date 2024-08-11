@@ -14,7 +14,7 @@
   ((patch))         \
 )
 #define pp_vulkan_version VK_MAKE_API_VERSION(VK_API_VERSION_1_3, 1, 3, 290)
-#define pp_engine_version pp_make_version(0, 0, 0)
+#define pp_engine_version pp_make_version(0, 10, 0)
 #define pp_settings_manager pp::SettingsManager::instance()
 
 namespace pp
@@ -36,11 +36,46 @@ class Settings
 class General : public Settings
 {
   public:
+    General() = default;
+    General(const General&) = default;
+    General(General&&) = default;
+
+    ~General() = default;
+
+    General& operator = (const General&) = default;
+    General& operator = (General&&) = default;
+
     static General default_values();
 
   public:
     std::string application_name = "PP Application";
     unsigned int application_version = pp_make_version(1, 0, 0);
+    std::vector<const char *> vk_layers;
+    std::vector<const char *> vk_instance_extensions;
+    std::vector<const char *> vk_device_extensions;
+    bool portability = false;
+};
+
+class Window : public Settings
+{
+  public:
+    Window() = default;
+    Window(const Window&) = default;
+    Window(Window&&) = default;
+
+    ~Window() = default;
+
+    Window& operator = (const Window&) = default;
+    Window& operator = (Window&&) = default;
+
+    static Window default_values();
+
+    float aspect_ratio() const;
+
+  public:
+    std::string title = "PP Application";
+    std::array<unsigned int, 2> size = { 1280u, 720u };
+    std::array<float, 2> scale = { 1.0f, 1.0f };
 };
 
 class SettingsManager
