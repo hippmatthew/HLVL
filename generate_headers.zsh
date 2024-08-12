@@ -91,7 +91,7 @@ read_numbered()
     if (( line_num > end )); then
       break
     fi
-  done < ${source_dir}/${proj}/include/${name}.hpp
+  done < $source_dir/$proj/include/$name.hpp
 }
 
 includes()
@@ -151,7 +151,7 @@ forward_declarations()
 log "Generating Physics+ version ${version} headers on system ${system}"
 
 if [[ ! -d "${build_dir}/include/physp" ]]; then
-  mkdir ${build_dir}/include/physp
+  mkdir -p $build_dir/include/physp
   log "made directory ${build_dir}/include/physp"
 fi
 

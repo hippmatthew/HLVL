@@ -8,7 +8,7 @@ if(NOT CMAKE_CXX_STANDARD)
 endif()
 
 project(PhysicsPlus
-  VERSION 0.10.0
+  VERSION 0.10.1
   LANGUAGES CXX
 )
 
