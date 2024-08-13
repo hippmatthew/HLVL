@@ -21,6 +21,7 @@ class IInterface
     virtual bool should_close() const = 0;
     virtual void poll_events() const = 0;
     virtual const vk::raii::SurfaceKHR& surface() = 0;
+    virtual void create_surface(const vk::raii::Instance&) = 0;
 };
 
 template <typename T>

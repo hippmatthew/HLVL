@@ -10,7 +10,7 @@ namespace pp
 class Context
 {
   public:
-    Context();
+    Context() = default;
     Context(Context&) = delete;
     Context(Context&&) = delete;
 
@@ -18,6 +18,8 @@ class Context
 
     Context& operator = (Context&) = delete;
     Context& operator = (Context&&) = delete;
+
+    void initialize();
 
     template <typename T>
     void set_interface();

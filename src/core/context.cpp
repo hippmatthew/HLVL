@@ -1,14 +1,20 @@
-#include "src/core/include/context.hpp"
+#include "src/core/include/context_decl.hpp"
 #include "src/core/include/settings_decl.hpp"
-#include "vulkan/vulkan_core.h"
-#include "vulkan/vulkan_handles.hpp"
+#include "src/windows/include/glfw.hpp"
 
 namespace pp
 {
 
-Context::Context()
+void Context::initialize()
 {
+  if (p_interface == nullptr)
+  {
+    pp_settings_manager.settings<General>().add_instance_extensions(windows::GLFW::instance_extensions());
+    set_interface<windows::GLFW>();
+  }
+
   createInstance();
+  p_interface->create_surface(vk_instance);
 }
 
 void Context::createInstance()

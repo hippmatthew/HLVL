@@ -47,6 +47,9 @@ class General : public Settings
 
     static General default_values();
 
+    void add_instance_extensions(std::vector<const char *>);
+    void add_device_extensions(std::vector<const char *>);
+
   public:
     std::string application_name = "PP Application";
     unsigned int application_version = pp_make_version(1, 0, 0);

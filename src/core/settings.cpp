@@ -11,6 +11,18 @@ General General::default_values()
   return General{};
 }
 
+void General::add_instance_extensions(std::vector<const char *> extensions)
+{
+  for (auto * extension : extensions)
+    vk_instance_extensions.emplace_back(extension);
+}
+
+void General::add_device_extensions(std::vector<const char *> extensions)
+{
+  for (auto * extension : extensions)
+    vk_device_extensions.emplace_back(extension);
+}
+
 Window Window::default_values()
 {
   return Window{};
