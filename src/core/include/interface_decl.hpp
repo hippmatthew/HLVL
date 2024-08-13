@@ -20,7 +20,7 @@ class IInterface
 
     virtual bool should_close() const = 0;
     virtual void poll_events() const = 0;
-    virtual const vk::raii::SurfaceKHR& surface() = 0;
+    virtual const vk::raii::SurfaceKHR& surface() const = 0;
     virtual void create_surface(const vk::raii::Instance&) = 0;
 };
 
@@ -35,11 +35,11 @@ class Interface : public IInterface
     Interface() = default;
     ~Interface() = default;
 
-    bool should_close() const;
-    void poll_events() const;
-    const vk::raii::SurfaceKHR& surface() const;
+    bool should_close() const override;
+    void poll_events() const override;
+    const vk::raii::SurfaceKHR& surface() const override;
 
-    void create_surface(const vk::raii::Instance&);
+    void create_surface(const vk::raii::Instance&) override;
 
     // template <typename K>
     // void add_binding(Key);

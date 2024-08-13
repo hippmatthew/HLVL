@@ -11,16 +11,25 @@ General General::default_values()
   return General{};
 }
 
+void General::add_layers(std::vector<const char *> layers)
+{
+  unsigned long end = vk_layers.size();
+  vk_layers.resize(end + layers.size());
+  std::copy(layers.begin(), layers.end(), vk_layers.begin() + end);
+}
+
 void General::add_instance_extensions(std::vector<const char *> extensions)
 {
-  for (auto * extension : extensions)
-    vk_instance_extensions.emplace_back(extension);
+  unsigned long end = vk_instance_extensions.size();
+  vk_instance_extensions.resize(end + extensions.size());
+  std::copy(extensions.begin(), extensions.end(), vk_instance_extensions.begin() + end);
 }
 
 void General::add_device_extensions(std::vector<const char *> extensions)
 {
-  for (auto * extension : extensions)
-    vk_device_extensions.emplace_back(extension);
+  unsigned long end = vk_device_extensions.size();
+  vk_device_extensions.resize(end + extensions.size());
+  std::copy(extensions.begin(), extensions.end(), vk_device_extensions.begin() + end);
 }
 
 Window Window::default_values()

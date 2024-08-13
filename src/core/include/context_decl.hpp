@@ -1,8 +1,16 @@
 #ifndef physp_core_context_decl_hpp
 #define physp_core_context_decl_hpp
 
-#include "src/core/include/settings.hpp"
-#include "src/core/include/interface_decl.hpp"
+#include "src/core/include/interface.hpp"
+#include "src/core/include/device.hpp"
+
+#ifndef physp_vulkan_include
+#define physp_vulkan_include
+
+#define VULKAN_HPP_NO_CONSTRUCTORS
+#include <vulkan/vulkan_raii.hpp>
+
+#endif // physp_vulkan_include
 
 namespace pp
 {
@@ -19,7 +27,7 @@ class Context
     Context& operator = (Context&) = delete;
     Context& operator = (Context&&) = delete;
 
-    void initialize();
+    void initialize(void * p_next = nullptr);
 
     template <typename T>
     void set_interface();
@@ -29,6 +37,7 @@ class Context
 
   private:
     std::shared_ptr<IInterface> p_interface = nullptr;
+    std::shared_ptr<Device> p_device = nullptr;
 
     vk::raii::Instance vk_instance = nullptr;
 };

@@ -1,7 +1,13 @@
 #ifndef physp_core_iwindow_decl_hpp
 #define physp_core_iwindow_decl_hpp
 
+#ifndef physp_vulkan_include
+#define physp_vulkan_include
+
+#define VULKAN_HPP_NO_CONSTRUCTORS
 #include <vulkan/vulkan_raii.hpp>
+
+#endif // physp_vulkan_include
 
 namespace pp
 {

@@ -13,7 +13,7 @@ void Context::set_interface()
     "pp::Context: attempted to set interface to non-window type"
   );
 
-  p_interface = std::make_shared<T>();
+  p_interface = std::make_shared<Interface<T>>();
 }
 
 } // namespace pp

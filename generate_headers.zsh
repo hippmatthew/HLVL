@@ -126,6 +126,7 @@ defines()
 forward_declarations()
 {
   input "class Context;"
+  input "class Device;"
   input "class IInterface;"
   input "template<typename T> class Interface;"
   input "class IWindow;"
@@ -187,9 +188,19 @@ forward_declarations
 
 space
 
+read_numbered device 11 20
+
+space
+
+read_numbered device 22 29
+
+space
+
 read_file context_decl "Context"
 
 space
+
+read_file device
 
 read_file interface_decl "IInterface"
 
@@ -277,7 +288,7 @@ read_numbered interface 9 31
 
 space
 
-read_numbered settings 9 84
+read_numbered settings 12 87
 
 space
 

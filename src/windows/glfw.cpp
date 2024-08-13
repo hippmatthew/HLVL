@@ -1,6 +1,10 @@
-#include "src/core/include/settings.hpp"
-#include "vulkan/vulkan_raii.hpp"
 #include "src/windows/include/glfw.hpp"
+
+#include "src/core/include/settings.hpp"
+#include "src/core/include/settings_decl.hpp"
+#include <GLFW/glfw3.h>
+#include <stdexcept>
+#include <iostream>
 
 namespace pp::windows
 {
@@ -9,7 +13,11 @@ GLFW::GLFW()
 {
   auto& s_window = pp_settings_manager.settings<Window>();
 
-  glfwInit();
+  if (!s_window.initialized)
+  {
+    glfwInit();
+    s_window.initialized = true;
+  }
 
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
   glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
@@ -35,7 +43,14 @@ GLFW::~GLFW()
 
 std::vector<const char *> GLFW::instance_extensions()
 {
-  unsigned int count = 0;
+  auto& s_window = pp_settings_manager.settings<Window>();
+  if (!s_window.initialized)
+  {
+    glfwInit();
+    s_window.initialized = true;
+  }
+
+  unsigned int count;
   const char ** extensions = glfwGetRequiredInstanceExtensions(&count);
 
   return std::vector<const char *>(extensions, extensions + count);
@@ -53,8 +68,11 @@ void GLFW::poll_events() const
 
 void GLFW::create_surface(const vk::raii::Instance& vk_instance)
 {
-  VkSurfaceKHR surface;
+  VkSurfaceKHR surface = nullptr;
   glfwCreateWindowSurface(*vk_instance, gl_window, nullptr, &surface);
+
+  if (surface == VK_NULL_HANDLE)
+    throw std::runtime_error("GLFW: cSurface was not created");
 
   vk_surface = vk::raii::SurfaceKHR(vk_instance, surface);
 }

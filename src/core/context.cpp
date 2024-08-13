@@ -1,11 +1,11 @@
-#include "src/core/include/context_decl.hpp"
-#include "src/core/include/settings_decl.hpp"
+#include "src/core/include/context.hpp"
 #include "src/windows/include/glfw.hpp"
+#include <stdexcept>
 
 namespace pp
 {
 
-void Context::initialize()
+void Context::initialize(void * p_next)
 {
   if (p_interface == nullptr)
   {
@@ -15,6 +15,11 @@ void Context::initialize()
 
   createInstance();
   p_interface->create_surface(vk_instance);
+
+  if (*p_interface->surface() == VK_NULL_HANDLE)
+    throw std::runtime_error("surface was not initialized");
+
+  p_device = std::make_shared<Device>(vk_instance, p_interface->surface(), p_next);
 }
 
 void Context::createInstance()
@@ -35,7 +40,7 @@ void Context::createInstance()
     if (std::string(ext.extensionName) == VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)
     {
       s_general.vk_instance_extensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
-      s_general.portability = true;
+      s_general.portability_enabled = true;
       break;
     }
   }

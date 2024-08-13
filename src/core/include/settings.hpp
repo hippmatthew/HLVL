@@ -1,3 +1,6 @@
+#ifndef physp_core_settings_hpp
+#define physp_core_settings_hpp
+
 #include "src/core/include/settings_decl.hpp"
 
 #include <stdexcept>
@@ -84,3 +87,5 @@ void SettingsManager::erase()
 }
 
 } // namespace pp
+
+#endif // physp_core_settings_hpp

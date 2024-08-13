@@ -1,7 +1,7 @@
 #ifndef physp_core_device_hpp
 #define physp_core_device_hpp
 
-#include <vulkan/vulkan_raii.hpp>
+#include "src/core/include/settings.hpp"
 
 #include <map>
 

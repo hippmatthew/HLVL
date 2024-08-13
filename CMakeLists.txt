@@ -8,7 +8,7 @@ if(NOT CMAKE_CXX_STANDARD)
 endif()
 
 project(PhysicsPlus
-  VERSION 0.10.1
+  VERSION 0.11.3
   LANGUAGES CXX
 )
 
@@ -48,6 +48,11 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
       /usr/local/lib
     )
   endif()
+
+  set(LINKS
+    Vulkan::Vulkan
+    glfw3
+  )
 else()
   include_directories(
     ${PHYSP_INCL_DIR}
@@ -56,6 +61,11 @@ else()
 
   link_directories(
     ${PHYSP_LIB_DIR}
+  )
+
+  set(LINKS
+    Vulkan::Vulkan
+    glfw
   )
 endif()
 
@@ -66,10 +76,7 @@ add_library(physp STATIC
   $<TARGET_OBJECTS:physp.windows>
 )
 
-target_link_libraries(physp PRIVATE
-  Vulkan::Vulkan
-  glfw3
-)
+target_link_libraries(physp PRIVATE ${LINKS})
 
 if(PHYSP_GENERATE_HEADERS)
   set(SRC_DIR ${CMAKE_SOURCE_DIR}/src)

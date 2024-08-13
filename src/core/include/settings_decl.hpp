@@ -1,8 +1,13 @@
-#ifndef physp_core_settings_hpp
-#define physp_core_settings_hpp
+#ifndef physp_core_settings_decl_hpp
+#define physp_core_settings_decl_hpp
+
+#ifndef physp_vulkan_include
+#define physp_vulkan_include
 
 #define VULKAN_HPP_NO_CONSTRUCTORS
 #include <vulkan/vulkan_raii.hpp>
+
+#endif // physp_vulkan_include
 
 #include <map>
 #include <memory>
@@ -14,7 +19,7 @@
   ((patch))         \
 )
 #define pp_vulkan_version VK_MAKE_API_VERSION(VK_API_VERSION_1_3, 1, 3, 290)
-#define pp_engine_version pp_make_version(0, 10, 1)
+#define pp_engine_version pp_make_version(0, 11, 3)
 #define pp_settings_manager pp::SettingsManager::instance()
 
 namespace pp
@@ -47,6 +52,7 @@ class General : public Settings
 
     static General default_values();
 
+    void add_layers(std::vector<const char *>);
     void add_instance_extensions(std::vector<const char *>);
     void add_device_extensions(std::vector<const char *>);
 
@@ -56,7 +62,8 @@ class General : public Settings
     std::vector<const char *> vk_layers;
     std::vector<const char *> vk_instance_extensions;
     std::vector<const char *> vk_device_extensions;
-    bool portability = false;
+    vk::PhysicalDeviceFeatures vk_pdFeatures;
+    bool portability_enabled = false;
 };
 
 class Window : public Settings
@@ -79,6 +86,7 @@ class Window : public Settings
     std::string title = "PP Application";
     std::array<unsigned int, 2> size = { 1280u, 720u };
     std::array<float, 2> scale = { 1.0f, 1.0f };
+    bool initialized = false;
 };
 
 class SettingsManager
@@ -124,4 +132,4 @@ class SettingsManager
 
 } // namespace pp
 
-#endif // physp_core_settings_hpp
+#endif // physp_core_settings_decl_hpp

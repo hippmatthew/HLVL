@@ -3,8 +3,13 @@
 
 #include "src/core/include/iwindow.hpp"
 
+#ifndef physp_glfw_include
+#define physp_glfw_include
+
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
+
+#endif // physp_glfw_include
 
 namespace pp::windows
 {
