@@ -268,7 +268,7 @@ void Device::createDevice(const void * p_next)
     .pQueueCreateInfos        = queueCreateInfos.data(),
     .enabledExtensionCount    = static_cast<unsigned int>(s_general.vk_device_extensions.size()),
     .ppEnabledExtensionNames  = s_general.vk_device_extensions.data(),
-    .pEnabledFeatures         = &s_general.vk_pdFeatures
+    .pEnabledFeatures         = &s_general.vk_physical_device_features
   };
 
   vk_device = vk_physicalDevice.createDevice(ci_device);

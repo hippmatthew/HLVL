@@ -8,7 +8,7 @@ if(NOT CMAKE_CXX_STANDARD)
 endif()
 
 project(PhysicsPlus
-  VERSION 0.11.3
+  VERSION 0.11.4
   LANGUAGES CXX
 )
 
@@ -49,10 +49,10 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
     )
   endif()
 
-  set(LINKS
-    Vulkan::Vulkan
-    glfw3
-  )
+  # set(LINKS
+  #   Vulkan::Vulkan
+  #   glfw3
+  # )
 else()
   include_directories(
     ${PHYSP_INCL_DIR}
@@ -62,12 +62,12 @@ else()
   link_directories(
     ${PHYSP_LIB_DIR}
   )
-
-  set(LINKS
-    Vulkan::Vulkan
-    glfw
-  )
 endif()
+
+set(LINKS
+  Vulkan::Vulkan
+  glfw
+)
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/src)
 

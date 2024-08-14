@@ -19,7 +19,7 @@
   ((patch))         \
 )
 #define pp_vulkan_version VK_MAKE_API_VERSION(VK_API_VERSION_1_3, 1, 3, 290)
-#define pp_engine_version pp_make_version(0, 11, 3)
+#define pp_engine_version pp_make_version(0, 11, 4)
 #define pp_settings_manager pp::SettingsManager::instance()
 
 namespace pp
@@ -62,7 +62,7 @@ class General : public Settings
     std::vector<const char *> vk_layers;
     std::vector<const char *> vk_instance_extensions;
     std::vector<const char *> vk_device_extensions;
-    vk::PhysicalDeviceFeatures vk_pdFeatures;
+    vk::PhysicalDeviceFeatures vk_physical_device_features;
     bool portability_enabled = false;
 };
 
