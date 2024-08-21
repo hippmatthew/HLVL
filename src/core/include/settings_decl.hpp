@@ -18,8 +18,8 @@
   ((minor) << 8)  | \
   ((patch))         \
 )
-#define pp_vulkan_version VK_MAKE_API_VERSION(VK_API_VERSION_1_3, 1, 3, 290)
-#define pp_engine_version pp_make_version(0, 11, 4)
+#define pp_vulkan_version VK_MAKE_API_VERSION(0, 1, 3, 290)
+#define pp_engine_version pp_make_version(0, 18, 4)
 #define pp_settings_manager pp::SettingsManager::instance()
 
 namespace pp
@@ -52,9 +52,9 @@ class General : public Settings
 
     static General default_values();
 
-    void add_layers(std::vector<const char *>);
-    void add_instance_extensions(std::vector<const char *>);
-    void add_device_extensions(std::vector<const char *>);
+    void add_layers(std::vector<const char *>&&);
+    void add_instance_extensions(std::vector<const char *>&&);
+    void add_device_extensions(std::vector<const char *>&&);
 
   public:
     std::string application_name = "PP Application";
@@ -100,8 +100,6 @@ class SettingsManager
 
     static SettingsManager& instance();
     static void destroy();
-
-    void reset_to_default();
 
     template <typename T>
     T& settings();

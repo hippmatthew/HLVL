@@ -1,10 +1,5 @@
-#include "src/windows/include/glfw.hpp"
-
 #include "src/core/include/settings.hpp"
-#include "src/core/include/settings_decl.hpp"
-#include <GLFW/glfw3.h>
-#include <stdexcept>
-#include <iostream>
+#include "src/windows/include/glfw.hpp"
 
 namespace pp::windows
 {
@@ -70,9 +65,6 @@ void GLFW::create_surface(const vk::raii::Instance& vk_instance)
 {
   VkSurfaceKHR surface = nullptr;
   glfwCreateWindowSurface(*vk_instance, gl_window, nullptr, &surface);
-
-  if (surface == VK_NULL_HANDLE)
-    throw std::runtime_error("GLFW: cSurface was not created");
 
   vk_surface = vk::raii::SurfaceKHR(vk_instance, surface);
 }

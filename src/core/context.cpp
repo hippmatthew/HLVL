@@ -1,9 +1,16 @@
 #include "src/core/include/context.hpp"
+#include "src/core/include/settings_decl.hpp"
 #include "src/windows/include/glfw.hpp"
-#include <stdexcept>
 
 namespace pp
 {
+
+Context::~Context()
+{
+  p_interface.reset();
+  p_allocator.reset();
+  p_device.reset();
+}
 
 void Context::initialize(void * p_next)
 {
@@ -14,12 +21,11 @@ void Context::initialize(void * p_next)
   }
 
   createInstance();
+
   p_interface->create_surface(vk_instance);
 
-  if (*p_interface->surface() == VK_NULL_HANDLE)
-    throw std::runtime_error("surface was not initialized");
-
   p_device = std::make_shared<Device>(vk_instance, p_interface->surface(), p_next);
+  p_allocator = std::make_shared<Allocator>(p_device);
 }
 
 void Context::createInstance()
@@ -40,6 +46,8 @@ void Context::createInstance()
     if (std::string(ext.extensionName) == VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)
     {
       s_general.vk_instance_extensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+      s_general.vk_instance_extensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+
       s_general.portability_enabled = true;
       break;
     }
@@ -52,6 +60,7 @@ void Context::createInstance()
     .enabledExtensionCount    = static_cast<unsigned int>(s_general.vk_instance_extensions.size()),
     .ppEnabledExtensionNames  = s_general.vk_instance_extensions.data()
   };
+  if (s_general.portability_enabled) ci_instance.flags |= vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR;
 
   vk_instance = vk_context.createInstance(ci_instance);
 }

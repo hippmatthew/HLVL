@@ -1,3 +1,4 @@
+#include "physp/physp_decl.hpp"
 #include "tests/test_classes.hpp"
 
 #include <catch2/catch_test_macros.hpp>
@@ -136,11 +137,100 @@ TEST_CASE( "persistence", "[unit][settings]" )
   CHECK( s.application_version == 1u );
 }
 
-TEST_CASE( "default", "[unit][settings]" )
+TEST_CASE( "general", "[unit][settings]" )
 {
-  pp::General& s = pp_settings_manager.settings<pp::General>();
-  s = pp::General::default_values();
+  pp::General& s_general = pp_settings_manager.settings<pp::General>();
 
-  CHECK( s.application_name == "PP Application" );
-  CHECK( s.application_version == pp_make_version(1, 0, 0) );
+  SECTION( "add_layers" )
+  {
+    std::vector<const char *> testNames = { "name1", "name2", "name3" };
+    s_general.add_layers(std::move(testNames));
+
+    bool success = true;
+
+    for (unsigned long i = 0; i < 3; ++i)
+    {
+      if (std::string(s_general.vk_layers[i]) != testNames[i])
+      {
+        success = false;
+        break;
+      }
+    }
+
+    CHECK( success );
+  }
+
+  SECTION( "add_instance_extensions" )
+  {
+    std::vector<const char *> testNames = { "name1", "name2", "name3" };
+    s_general.add_instance_extensions(std::move(testNames));
+
+    bool success = true;
+
+    for (unsigned long i = 0; i < 3; ++i)
+    {
+      if (std::string(s_general.vk_instance_extensions[i]) != testNames[i])
+      {
+        success = false;
+        break;
+      }
+    }
+
+    CHECK( success );
+  }
+
+  SECTION( "add_device_extensions" )
+  {
+    std::vector<const char *> testNames = { "name1", "name2", "name3" };
+    s_general.add_device_extensions(std::move(testNames));
+
+    bool success = true;
+
+    for (unsigned long i = 0; i < 3; ++i)
+    {
+      if (std::string(s_general.vk_device_extensions[i]) != testNames[i])
+      {
+        success = false;
+        break;
+      }
+    }
+
+    CHECK( success );
+  }
+
+  SECTION( "defaults" )
+  {
+    s_general = pp::General::default_values();
+
+    CHECK( s_general.application_name == "PP Application" );
+    CHECK( s_general.application_version == pp_make_version(1, 0, 0) );
+    CHECK( s_general.vk_layers.empty() );
+    CHECK( s_general.vk_instance_extensions.empty() );
+    CHECK( s_general.vk_device_extensions.empty() );
+    CHECK( s_general.vk_physical_device_features == vk::PhysicalDeviceFeatures{} );
+    CHECK( s_general.portability_enabled == false );
+  }
+}
+
+TEST_CASE( "window", "[unit][settings]" )
+{
+  pp::Window& s_window = pp_settings_manager.settings<pp::Window>();
+
+  SECTION( "aspect_ratio" )
+  {
+    s_window.size = { 2, 2 };
+    s_window.scale = { 2.0f, 2.0f };
+
+    CHECK( s_window.aspect_ratio() == 1.0f );
+  }
+
+  SECTION( "defaults" )
+  {
+    s_window = pp::Window::default_values();
+
+    CHECK( s_window.title == "PP Application" );
+    CHECK( s_window.size == std::array<unsigned int, 2>{ 1280, 720 } );
+    CHECK( s_window.scale == std::array<float, 2>{ 1.0f, 1.0f } );
+    CHECK( s_window.initialized == false );
+  }
 }

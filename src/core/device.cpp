@@ -108,7 +108,6 @@ Device::QueueFamilies::QueueFamilies(const vk::raii::PhysicalDevice& vk_physical
 
   if (!f_sparse.empty())
     addFamily(f_sparse.front(), FamilyType::Sparse);
-
 }
 
 void Device::QueueFamilies::addFamily(unsigned long index, FamilyType type)
@@ -187,8 +186,8 @@ void Device::getGPU(const vk::raii::Instance& vk_instance, const vk::raii::Surfa
     }
     if (!hasAllFamily) continue;
 
-    bool supportsExtensions;
-    for (const auto& extension : s_general.vk_device_extensions)
+    bool supportsExtensions = true;
+    for (const char * extension : s_general.vk_device_extensions)
     {
       supportsExtensions = false;
       for (const auto& property : GPU.enumerateDeviceExtensionProperties())
@@ -220,10 +219,14 @@ void Device::getGPU(const vk::raii::Instance& vk_instance, const vk::raii::Surfa
     }
   }
 
-  if (!discreteGPUs.empty()) vk_physicalDevice = discreteGPUs.front();
-  else if (!integratedGPUs.empty()) vk_physicalDevice = integratedGPUs.front();
-  else if (!virtualGPUs.empty()) vk_physicalDevice = virtualGPUs.front();
-  else throw std::runtime_error("error @ vecs::Device::getGPU() : no suitable gpu found");
+  if (!discreteGPUs.empty())
+    vk_physicalDevice = discreteGPUs.front();
+  else if (!integratedGPUs.empty())
+    vk_physicalDevice = integratedGPUs.front();
+  else if (!virtualGPUs.empty())
+    vk_physicalDevice = virtualGPUs.front();
+  else
+    throw std::runtime_error("pp::Device: no suitable GPU found");
 
   queueFamilies = std::make_unique<QueueFamilies>(vk_physicalDevice, vk_surface);
 
@@ -232,6 +235,7 @@ void Device::getGPU(const vk::raii::Instance& vk_instance, const vk::raii::Surfa
   {
     if (std::string(extension.extensionName) == VK_PORTABILITY_SUBSET_NAME)
     {
+      s_general.add_device_extensions({ VK_PORTABILITY_SUBSET_NAME });
       portability = true;
       break;
     }
@@ -258,9 +262,6 @@ void Device::createDevice(const void * p_next)
 
     queueCreateInfos.emplace_back(createInfo);
   }
-
-  if (s_general.portability_enabled)
-    s_general.add_device_extensions({ VK_PORTABILITY_SUBSET_NAME });
 
   vk::DeviceCreateInfo ci_device{
     .pNext                    = p_next,

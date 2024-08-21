@@ -8,6 +8,15 @@
 namespace pp
 {
 
+enum FamilyType
+{
+  All,
+  Compute,
+  Transfer,
+  Async,
+  Sparse
+};
+
 enum QueueType
 {
   Graphics,
@@ -17,15 +26,6 @@ enum QueueType
   AsyncCompute,
   AsyncTransfer,
   SparseBinding
-};
-
-enum FamilyType
-{
-  All,
-  Compute,
-  Transfer,
-  Async,
-  Sparse
 };
 
 class Device

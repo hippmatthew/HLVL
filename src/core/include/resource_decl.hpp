@@ -1,66 +1,51 @@
 #ifndef physp_core_resource_decl_hpp
 #define physp_core_resource_decl_hpp
 
-#ifndef physp_vulkan_include
-#define physp_vulkan_include
-
-#define VULKAN_HPP_NO_CONSTRUCTORS
-#include <vulkan/vulkan_raii.hpp>
-
-#endif // physp_vulkan_include
-
-#include <initializer_list>
-#include <vector>
+#include "src/core/include/allocator.hpp"
 
 namespace pp
 {
 
 enum ResourceType
 {
-  vertex_buffer,
-  index_buffer,
+  vertex,
+  index,
   uniform,
-  storage,
-  texture
+  storage
 };
-
-enum Locality
-{
-  host,
-  device
-};
-
-class ResourcePool;
 
 class IResource
 {
-  friend ResourcePool;
+  friend class Allocation;
 
   public:
-    IResource() = default;
+    IResource(std::size_t);
     IResource(const IResource&);
     IResource(IResource&&);
 
-    ~IResource() = default;
+    virtual ~IResource();
 
     IResource& operator = (const IResource&);
     IResource& operator = (IResource&&);
 
+    virtual std::mutex& mutex() = 0;
+
   public:
-    vk::BufferUsageFlagBits usage;
-    vk::SharingMode sharing_mode;
+    ResourceType resource_type = uniform;
+    bool is_shared = false;
+    const std::size_t size;
+    Allocator::AllocationIndex allocation_index;
 
   protected:
-    ResourcePool * p_allocation = nullptr;
-    const unsigned long allocationIndex = -1;
+    Allocator * p_allocator = nullptr;
+    Buffer * p_buffer = nullptr;
 };
 
 template <typename T>
 class Resource : public IResource
 {
   public:
-    Resource(T&, ResourceType, bool shared = false);
-    Resource(T&&, ResourceType, bool shared = false);
+    Resource(T, ResourceType t = uniform, bool s = false);
     Resource(const Resource&) = default;
     Resource(Resource&&) = default;
 
@@ -70,38 +55,18 @@ class Resource : public IResource
     Resource& operator = (Resource&&);
     Resource& operator = (T&);
     Resource& operator = (T&&);
+    const T& operator * () const;
 
-  public:
-    const unsigned long size = sizeof(T);
+    const vk::raii::Buffer& buffer() const;
+
+    std::mutex& mutex() override;
+
+  private:
+    void updateAllocation() const;
 
   private:
     T data;
-};
-
-class ResourcePool
-{
-  public:
-    ResourcePool(std::vector<IResource *>, Locality l = device);
-    ResourcePool(std::initializer_list<IResource *>);
-    ResourcePool(const ResourcePool&) = delete;
-    ResourcePool(ResourcePool&&);
-
-    ~ResourcePool();
-
-    ResourcePool& operator = (const ResourcePool&) = delete;
-    ResourcePool& operator = (ResourcePool&&);
-    ResourcePool& operator = (std::initializer_list<IResource *>);
-
-    template <typename T>
-    Resource<T>& operator [] (unsigned long);
-
-    void clear();
-
-  public:
-    Locality locality = device;
-
-  private:
-    std::vector<IResource *> resources;
+    std::mutex data_mutex;
 };
 
 } // namespace pp

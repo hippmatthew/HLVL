@@ -11,25 +11,19 @@ General General::default_values()
   return General{};
 }
 
-void General::add_layers(std::vector<const char *> layers)
+void General::add_layers(std::vector<const char *>&& layers)
 {
-  unsigned long end = vk_layers.size();
-  vk_layers.resize(end + layers.size());
-  std::copy(layers.begin(), layers.end(), vk_layers.begin() + end);
+  vk_layers = layers;
 }
 
-void General::add_instance_extensions(std::vector<const char *> extensions)
+void General::add_instance_extensions(std::vector<const char *>&& extensions)
 {
-  unsigned long end = vk_instance_extensions.size();
-  vk_instance_extensions.resize(end + extensions.size());
-  std::copy(extensions.begin(), extensions.end(), vk_instance_extensions.begin() + end);
+  vk_instance_extensions = extensions;
 }
 
-void General::add_device_extensions(std::vector<const char *> extensions)
+void General::add_device_extensions(std::vector<const char *>&& extensions)
 {
-  unsigned long end = vk_device_extensions.size();
-  vk_device_extensions.resize(end + extensions.size());
-  std::copy(extensions.begin(), extensions.end(), vk_device_extensions.begin() + end);
+  vk_device_extensions = extensions;
 }
 
 Window Window::default_values()
@@ -39,7 +33,7 @@ Window Window::default_values()
 
 float Window::aspect_ratio() const
 {
-  return size[0] * scale[0] / (size[1] * scale[1]);
+  return (size[0] * scale[0]) / (size[1] * scale[1]);
 }
 
 SettingsManager::SettingsManager()

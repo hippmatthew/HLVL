@@ -8,7 +8,7 @@ time=$(date "+%m-%d-%Y %H:%M:%S")
 system=$(uname -s)
 start_time=$(date +%s)
 
-deps=(map memory stdexcept string type_traits)
+deps=(future map memory mutex queue stdexcept string type_traits vector)
 file=physp_decl
 proj=core
 
@@ -98,12 +98,10 @@ includes()
 {
   input "#define VULKAN_HPP_NO_CONSTRUCTORS"
   input "#include <vulkan/vulkan_raii.hpp>"
-
   space
 
   input "#define GLFW_INCLUDE_NONE"
   input "#include <GLFW/glfw3.h>"
-
   space
 
   for dep in "${deps[@]}"; do
@@ -125,25 +123,28 @@ defines()
 
 forward_declarations()
 {
+  input "class Allocation;"
+  input "class Allocator;"
+  input "class Buffer;"
   input "class Context;"
   input "class Device;"
   input "class IInterface;"
   input "template<typename T> class Interface;"
+  input "class IResource;"
+  input "template<typename T> class Resource;"
   input "class IWindow;"
   input "class KeyCallback;"
   input "class Settings;"
   input "class General;"
   input "class SettingsManager;"
-
+  input "class StagingBuffer;"
   space
 
   input "namespace windows"
   input "{"
-
   space
 
   input "class GLFW;"
-
   space
 
   input "} // namespace pp::windows"
@@ -156,82 +157,98 @@ if [[ ! -d "${build_dir}/include/physp" ]]; then
   log "made directory ${build_dir}/include/physp"
 fi
 
-log "generating ${file}.hpp"
-
 #############################
 # physp_decl.hpp generation #
 #############################
+log "generating ${file}.hpp"
+
 clear
 header
-
 space
 
 input "#ifndef physp_decl_hpp"
 input "#define physp_decl_hpp"
-
 space
 
 includes
-
 space
 
 defines
-
 space
 
 input "namespace pp"
 input "{"
-
 space
 
 forward_declarations
-
 space
 
-read_numbered device 11 20
-
+# enum FamilyType
+read_numbered device 11 18
 space
 
-read_numbered device 22 29
+# enum Locality
+read_numbered allocation 12 16
+space
 
+# enum QueueType
+read_numbered device 20 29
+space
+
+# enum ResourceType
+read_numbered resource_decl 9 15
+space
+
+# struct ResourcePool
+read_numbered allocation 18 22
+space
+
+read_file allocation
+space
+
+read_file stagingbuffer "StagingBuffer"
+space
+
+read_file allocator
+space
+
+read_file allocation "Buffer"
 space
 
 read_file context_decl "Context"
-
 space
 
 read_file device
+space
 
 read_file interface_decl "IInterface"
-
 space
 
 read_file interface_decl "Interface" 1
+space
 
+read_file resource_decl "IResource"
+space
+
+read_file resource_decl "Resource" 1
 space
 
 read_file iwindow_decl "IWindow"
-
 space
 
 read_file iwindow_decl "KeyCallback"
-
 space
 
 read_file settings_decl "Settings"
-
 space
 
 read_file settings_decl "General : public Settings"
-
 space
 
 read_file settings_decl "Window : public Settings"
-
 space
 
 read_file settings_decl "SettingsManager"
-
 space
 
 proj=windows
@@ -247,7 +264,6 @@ space
 
 input "} // namespace pp::windows"
 input "} // namespace pp"
-
 space
 
 input "#endif // physp_decl_hpp" 0
@@ -255,7 +271,6 @@ input "#endif // physp_decl_hpp" 0
 ########################
 # physp.hpp generation #
 ########################
-
 file=physp
 proj=core
 
@@ -263,37 +278,32 @@ log "Generating ${file}.hpp"
 
 clear
 header
-
 space
 
 input "#ifndef physp_hpp"
 input "#define physp_hpp"
-
 space
 
 input "#include \"./physp_decl.hpp\""
-
 space
 
 input "namespace pp"
 input "{"
-
 space
 
 read_numbered context 9 17
-
 space
 
 read_numbered interface 9 31
+space
 
+read_numbered resource 9 83
 space
 
 read_numbered settings 12 87
-
 space
 
 input "} // namespace pp"
-
 space
 
 input "#endif // ${file}_hpp" 0

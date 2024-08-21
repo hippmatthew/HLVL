@@ -2,33 +2,16 @@
 #define physp_core_resource_hpp
 
 #include "src/core/include/resource_decl.hpp"
-#include <stdexcept>
-#include <vulkan/vulkan_enums.hpp>
 
 namespace pp
 {
 
 template <typename T>
-Resource<T>::Resource(T& initData, ResourceType t, bool shared)
+Resource<T>::Resource(T d, ResourceType t, bool s) : IResource(sizeof(T))
 {
-  data = initData;
-  sharing_mode = shared ? vk::SharingMode::eConcurrent : vk::SharingMode::eExclusive;
-
-  switch(t)
-  {
-    case vertex_buffer:
-      usage = vk::BufferUsageFlagBits::eVertexBuffer;
-      break;
-    case index_buffer:
-      usage = vk::BufferUsageFlagBits::eIndexBuffer;
-      break;
-    case uniform:
-      usage = vk::BufferUsageFlagBits::eUniformBuffer;
-      break;
-    case storage:
-      usage = vk::BufferUsageFlagBits::eStorageBuffer;
-      break;
-  }
+  resource_type = t;
+  is_shared = s;
+  data = d;
 }
 
 template <typename T>
@@ -37,32 +20,66 @@ Resource<T>& Resource<T>::operator = (const Resource<T>& resource)
   if (this == &resource) return *this;
 
   data = resource.data;
-}
+  updateAllocation();
 
-template <typename T>
-Resource<T>& Resource<T>::operator = (T& newData)
-{
-  data = newData;
   return *this;
 }
 
 template <typename T>
-Resource<T>& Resource<T>::operator = (T&& newData)
+Resource<T>& Resource<T>::operator = (Resource<T>&& resource)
 {
-  data = std::move(newData);
+  if (this == &resource) return *this;
+
+  data = std::move(resource.data);
+  updateAllocation();
+
   return *this;
 }
 
 template <typename T>
-Resource<T>& ResourcePool::operator [] (unsigned long index)
+Resource<T>& Resource<T>::operator = (T& d)
 {
-  if (index >= resources.size())
-    throw std::out_of_range("pp::ResourcePool: index out of range");
+  data = d;
+  updateAllocation();
 
-  if (resources[index] == nullptr)
-    throw std::runtime_error("pp::ResourcePool: accessed invalid data");
+  return *this;
+}
 
-  return *static_cast<Resource<T> *>(resources[index]);
+template <typename T>
+Resource<T>& Resource<T>::operator = (T&& d)
+{
+  data = d;
+  updateAllocation();
+
+  return *this;
+}
+
+template <typename T>
+const T& Resource<T>::operator * () const
+{
+  return data;
+}
+
+template <typename T>
+const vk::raii::Buffer& Resource<T>::buffer() const
+{
+  if (p_buffer != nullptr)
+    throw std::runtime_error("pp::Resource: tried to access buffer before being allocated");
+
+  return p_buffer->buffer();
+}
+
+template <typename T>
+std::mutex& Resource<T>::mutex()
+{
+  return data_mutex;
+}
+
+template <typename T>
+void Resource<T>::updateAllocation() const
+{
+  if (p_allocator != nullptr)
+    p_allocator->update_allocation(allocation_index, &data);
 }
 
 } // namespace pp
