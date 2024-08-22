@@ -60,20 +60,43 @@ void Allocator::hostUpdate(const AllocationIndex& index, void * data)
 
 void Allocator::deviceUpdate(const AllocationIndex& index, void * data, const std::mutex * p_mutex)
 {
-  if (stagingBuffers.empty())
-    stagingBuffers.emplace(StagingBuffer(*p_device));
-
-  auto stagingBuffer = std::move(stagingBuffers.front());
-  stagingBuffers.pop();
+  if (futures.size() >= maxThreads)
+  {
+    futures.front().wait();
+    futures.pop();
+  }
 
   auto& allocation = allocations[index.first];
   auto& buffer = allocation.buffers[index.second];
+  auto& data_mutex = *const_cast<std::mutex *>(p_mutex);
 
-  stagingBuffer.allocate(*p_device, buffer.p_resource->size, data);
-  stagingBuffer.transfer(*p_device, buffer.vk_buffer);
-  stagingBuffer.reset();
+  futures.emplace(std::async(std::launch::async,
+    [this, &buffer, &data_mutex, data]{
+      data_mutex.lock();
+      buffer.mutex.lock();
+      mutex.lock();
 
-  stagingBuffers.emplace(std::move(stagingBuffer));
+      if (stagingBuffers.empty())
+        stagingBuffers.emplace(StagingBuffer(*p_device));
+
+      auto stagingBuffer = std::move(stagingBuffers.front());
+      stagingBuffers.pop();
+
+      mutex.unlock();
+
+      stagingBuffer.allocate(*p_device, buffer.p_resource->size, data);
+      stagingBuffer.transfer(*p_device, buffer.vk_buffer);
+      stagingBuffer.reset();
+
+      data_mutex.unlock();
+      buffer.mutex.unlock();
+      mutex.lock();
+
+      stagingBuffers.emplace(std::move(stagingBuffer));
+
+      mutex.unlock();
+    }
+  ));
 }
 
 } // namespace pp

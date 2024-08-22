@@ -39,7 +39,7 @@ class Buffer
     const vk::raii::Buffer& buffer() const;
 
   private:
-    std::mutex dst_mutex;
+    std::mutex mutex;
     IResource * p_resource = nullptr;
 
     vk::raii::Buffer vk_buffer = nullptr;

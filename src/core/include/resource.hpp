@@ -73,7 +73,7 @@ template <typename T>
 void Resource<T>::updateAllocation() const
 {
   if (p_allocator != nullptr)
-    p_allocator->update_allocation(allocation_index, static_cast<void *>(const_cast<T *>(&data)), &data_mutex);
+    p_allocator->update_allocation(allocation_index, static_cast<void *>(const_cast<T *>(&data)), &mutex);
 }
 
 } // namespace pp

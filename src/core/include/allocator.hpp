@@ -43,7 +43,7 @@ class Allocator
     const std::size_t maxThreads;
     std::queue<StagingBuffer> stagingBuffers;
     std::queue<std::future<void>> futures;
-    std::mutex queue_mutex;
+    std::mutex mutex;
 };
 
 } // namespace pp

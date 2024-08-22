@@ -30,7 +30,6 @@ class StagingBuffer
     void reset();
 
   private:
-    std::mutex src_mutex;
     FamilyType queueFamily = All;
 
     vk::raii::DeviceMemory vk_memory = nullptr;

@@ -38,9 +38,6 @@ class IResource
   protected:
     Allocator * p_allocator = nullptr;
     Buffer * p_buffer = nullptr;
-
-  private:
-    std::mutex parent_mutex;
 };
 
 template <typename T>
@@ -65,8 +62,8 @@ class Resource : public IResource
     void updateAllocation() const;
 
   private:
+    std::mutex mutex;
     T data;
-    std::mutex data_mutex;
 };
 
 } // namespace pp

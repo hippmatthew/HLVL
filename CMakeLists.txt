@@ -2,20 +2,22 @@ cmake_minimum_required(VERSION 3.20.0)
 
 option(PHYSP_GENERATE_HEADERS "Generates Headers. Requires zsh." ON)
 option(PHYSP_BUILD_TESTS "Builds tests. Requires Catch2." ON)
-option(PHYSP_CORE_DUMP "Dumps core files for debugging." ON)
+option(PHYSP_DEBUG "Enables debug flags and optimization level to 0" OFF)
 
 if(NOT CMAKE_CXX_STANDARD GREATER_EQUAL 20)
   set(CMAKE_CXX_STANDARD 20)
 endif()
 
-if (PHYSP_CORE_DUMP)
-  message(STATUS "Debugging enabled. Make sure core files are handled properly on this machine")
+if (PHYSP_DEBUG)
   set(CMAKE_BUILD_TYPE Debug)
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0")
+else()
+  set(CMAKE_BUILD_TYPE Release)
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -flto")
 endif()
 
 project(PhysicsPlus
-  VERSION 0.26.1
+  VERSION 0.28.0
   LANGUAGES CXX
 )
 
@@ -55,11 +57,6 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
       /usr/local/lib
     )
   endif()
-
-  # set(LINKS
-  #   Vulkan::Vulkan
-  #   glfw3
-  # )
 else()
   include_directories(
     ${PHYSP_INCL_DIR}
