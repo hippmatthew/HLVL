@@ -1,4 +1,5 @@
 #include "src/core/include/settings.hpp"
+#include "vulkan/vulkan_core.h"
 #include "src/windows/include/glfw.hpp"
 
 namespace pp::windows
@@ -49,6 +50,11 @@ std::vector<const char *> GLFW::instance_extensions()
   const char ** extensions = glfwGetRequiredInstanceExtensions(&count);
 
   return std::vector<const char *>(extensions, extensions + count);
+}
+
+std::vector<const char *> GLFW::device_extensions()
+{
+  return { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 }
 
 bool GLFW::should_close() const

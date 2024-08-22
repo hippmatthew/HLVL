@@ -63,23 +63,17 @@ const T& Resource<T>::operator * () const
 template <typename T>
 const vk::raii::Buffer& Resource<T>::buffer() const
 {
-  if (p_buffer != nullptr)
+  if (p_buffer == nullptr)
     throw std::runtime_error("pp::Resource: tried to access buffer before being allocated");
 
   return p_buffer->buffer();
 }
 
 template <typename T>
-std::mutex& Resource<T>::mutex()
-{
-  return data_mutex;
-}
-
-template <typename T>
 void Resource<T>::updateAllocation() const
 {
   if (p_allocator != nullptr)
-    p_allocator->update_allocation(allocation_index, &data);
+    p_allocator->update_allocation(allocation_index, static_cast<void *>(const_cast<T *>(&data)), &data_mutex);
 }
 
 } // namespace pp

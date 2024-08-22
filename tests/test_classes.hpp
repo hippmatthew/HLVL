@@ -21,4 +21,15 @@ class Test2 : public pp::Settings
     int b = 0;
 };
 
+struct Vertex
+{
+  unsigned int x, y, z;
+};
+
+inline void reset_settings()
+{
+  pp_settings_manager.settings<pp::General>() = pp::General::default_values();
+  pp_settings_manager.settings<pp::Window>() = pp::Window::default_values();
+}
+
 #endif // physp_tests_test_classes_hpp

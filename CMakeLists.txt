@@ -2,13 +2,20 @@ cmake_minimum_required(VERSION 3.20.0)
 
 option(PHYSP_GENERATE_HEADERS "Generates Headers. Requires zsh." ON)
 option(PHYSP_BUILD_TESTS "Builds tests. Requires Catch2." ON)
+option(PHYSP_CORE_DUMP "Dumps core files for debugging." ON)
 
-if(NOT CMAKE_CXX_STANDARD)
+if(NOT CMAKE_CXX_STANDARD GREATER_EQUAL 20)
   set(CMAKE_CXX_STANDARD 20)
 endif()
 
+if (PHYSP_CORE_DUMP)
+  message(STATUS "Debugging enabled. Make sure core files are handled properly on this machine")
+  set(CMAKE_BUILD_TYPE Debug)
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0")
+endif()
+
 project(PhysicsPlus
-  VERSION 0.11.4
+  VERSION 0.19.4
   LANGUAGES CXX
 )
 

@@ -21,6 +21,7 @@ class GLFW : public IWindow
     ~GLFW() override;
 
     static std::vector<const char *> instance_extensions();
+    static std::vector<const char *> device_extensions();
 
     bool should_close() const override;
     void poll_events() const override;

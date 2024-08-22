@@ -27,6 +27,7 @@ class StagingBuffer
 
     void allocate(const Device&, const std::size_t&, void *);
     void transfer(const Device&, const vk::raii::Buffer&);
+    void reset();
 
   private:
     std::mutex src_mutex;

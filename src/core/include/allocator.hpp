@@ -26,13 +26,14 @@ class Allocator
     Allocator& operator = (Allocator&&) = delete;
 
     void new_allocation(ResourcePool&&);
-    void update_allocation(const AllocationIndex&, void *);
+    void update_allocation(const AllocationIndex&, void *, const std::mutex *);
+    void wait();
 
   private:
     void validateIndex(const AllocationIndex&);
 
     void hostUpdate(const AllocationIndex&, void *);
-    void deviceUpdate(const AllocationIndex&, void *);
+    void deviceUpdate(const AllocationIndex&, void *, const std::mutex *);
 
   private:
     std::shared_ptr<Device> p_device;

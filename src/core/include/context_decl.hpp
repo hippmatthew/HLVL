@@ -19,6 +19,8 @@ class Context
     Context& operator = (Context&) = delete;
     Context& operator = (Context&&) = delete;
 
+    Allocator& allocator() const;
+
     void initialize(void * p_next = nullptr);
 
     template <typename T>

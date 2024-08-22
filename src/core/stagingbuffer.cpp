@@ -1,7 +1,9 @@
 #include "src/core/include/stagingbuffer.hpp"
 #include "src/core/include/resource_decl.hpp"
 #include "vulkan/vulkan.hpp"
+#include "vulkan/vulkan_enums.hpp"
 #include <limits>
+#include <iostream>
 
 namespace pp
 {
@@ -14,6 +16,7 @@ StagingBuffer::StagingBuffer(const Device& device)
     queueFamily = Async;
 
   vk::CommandPoolCreateInfo ci_commandPool{
+    .flags            = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
     .queueFamilyIndex = static_cast<unsigned int>(device.familyIndex(queueFamily)),
   };
 
@@ -39,6 +42,8 @@ StagingBuffer::StagingBuffer(StagingBuffer&& buffer)
 
   vk_commandPool = std::move(buffer.vk_commandPool);
   vk_commandBuffer = std::move(buffer.vk_commandBuffer);
+
+  vk_fence = std::move(buffer.vk_fence);
 }
 
 unsigned int StagingBuffer::findIndex(
@@ -89,7 +94,6 @@ void StagingBuffer::allocate(const Device& device, const std::size_t& size, void
 
 void StagingBuffer::transfer(const Device& device, const vk::raii::Buffer& dst_buffer)
 {
-  vk_commandBuffer.reset();
   vk_commandBuffer.begin(vk::CommandBufferBeginInfo{});
 
   vk::BufferCopy copyInfo{
@@ -110,6 +114,13 @@ void StagingBuffer::transfer(const Device& device, const vk::raii::Buffer& dst_b
 
   static_cast<void>(device.logical().waitForFences(*vk_fence, vk::True, std::numeric_limits<unsigned long>::max()));
   device.logical().resetFences(*vk_fence);
+}
+
+void StagingBuffer::reset()
+{
+  vk_buffer.clear();
+  vk_memory.clear();
+  vk_commandBuffer.reset();
 }
 
 } // namespace pp

@@ -7,9 +7,16 @@ namespace pp
 
 Context::~Context()
 {
+  p_allocator->wait();
+
   p_interface.reset();
   p_allocator.reset();
   p_device.reset();
+}
+
+Allocator& Context::allocator() const
+{
+  return *p_allocator;
 }
 
 void Context::initialize(void * p_next)

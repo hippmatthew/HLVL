@@ -39,9 +39,11 @@ class Buffer
     const vk::raii::Buffer& buffer() const;
 
   private:
+    std::mutex dst_mutex;
+    IResource * p_resource = nullptr;
+
     vk::raii::Buffer vk_buffer = nullptr;
     unsigned long offset = 0;
-    std::mutex dst_mutex;
 };
 
 class Allocation
@@ -62,7 +64,7 @@ class Allocation
     unsigned int findIndex(const vk::raii::PhysicalDevice&, unsigned int, vk::MemoryPropertyFlags) const;
 
   private:
-    ResourcePool resourcePool;
+    Locality locality = device;
     vk::raii::DeviceMemory vk_memory = nullptr;
     std::vector<Buffer> buffers;
 };

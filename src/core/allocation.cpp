@@ -1,6 +1,8 @@
 #include "src/core/include/allocation.hpp"
 #include "src/core/include/resource_decl.hpp"
+
 #include <stdexcept>
+#include <iostream>
 
 namespace pp
 {
@@ -8,6 +10,7 @@ namespace pp
 Buffer::Buffer(const Device& device, IResource * resource, unsigned long j, bool deviceLocal)
 {
   resource->allocation_index.second = j;
+  p_resource = resource;
 
   vk::BufferUsageFlags usage;
   switch (resource->resource_type)
@@ -39,11 +42,16 @@ Buffer::Buffer(const Device& device, IResource * resource, unsigned long j, bool
 
 Buffer::Buffer(Buffer&& buffer)
 {
+  p_resource = buffer.p_resource;
   vk_buffer = std::move(buffer.vk_buffer);
+
+  buffer.p_resource = nullptr;
 }
 
 const vk::raii::Buffer& Buffer::buffer() const
 {
+  if (*vk_buffer == nullptr)
+    throw std::runtime_error("pp::Buffer: vk_buffer is null handle");
   return vk_buffer;
 }
 
@@ -51,13 +59,14 @@ Allocation::Allocation(const Device& device, ResourcePool&& pool, unsigned long 
 {
   unsigned long index = 0;
   unsigned int filter = 0x0u, size = 0;
+  locality = pool.locality;
 
   for (auto * resource : pool.resources)
   {
     resource->allocation_index.first = i;
     resource->p_allocator = p_allocator;
 
-    buffers.emplace_back(Buffer(device, resource, index, pool.locality == Locality::device));
+    buffers.emplace_back(Buffer(device, resource, index, locality == Locality::device));
     resource->p_buffer = &buffers[index];
 
     auto requirements = buffers[index].vk_buffer.getMemoryRequirements();
@@ -73,7 +82,7 @@ Allocation::Allocation(const Device& device, ResourcePool&& pool, unsigned long 
   }
 
   vk::MemoryPropertyFlags flags;
-  switch (pool.locality)
+  switch (locality)
   {
     case Locality::host:
       flags |= vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
@@ -91,12 +100,11 @@ Allocation::Allocation(const Device& device, ResourcePool&& pool, unsigned long 
 
   for (auto& buffer : buffers)
     buffer.vk_buffer.bindMemory(*vk_memory, buffer.offset);
-
-  resourcePool = std::move(pool);
 }
 
 Allocation::Allocation(Allocation&& allocation)
 {
+  locality = allocation.locality;
   vk_memory = std::move(allocation.vk_memory);
   buffers = std::move(allocation.buffers);
 }

@@ -297,7 +297,7 @@ space
 read_numbered interface 9 31
 space
 
-read_numbered resource 9 83
+read_numbered resource 9 77
 space
 
 read_numbered settings 12 87

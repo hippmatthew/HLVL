@@ -17,6 +17,7 @@ enum ResourceType
 class IResource
 {
   friend class Allocation;
+  friend class Allocator;
 
   public:
     IResource(std::size_t);
@@ -28,8 +29,6 @@ class IResource
     IResource& operator = (const IResource&);
     IResource& operator = (IResource&&);
 
-    virtual std::mutex& mutex() = 0;
-
   public:
     ResourceType resource_type = uniform;
     bool is_shared = false;
@@ -39,6 +38,9 @@ class IResource
   protected:
     Allocator * p_allocator = nullptr;
     Buffer * p_buffer = nullptr;
+
+  private:
+    std::mutex parent_mutex;
 };
 
 template <typename T>
@@ -58,8 +60,6 @@ class Resource : public IResource
     const T& operator * () const;
 
     const vk::raii::Buffer& buffer() const;
-
-    std::mutex& mutex() override;
 
   private:
     void updateAllocation() const;
