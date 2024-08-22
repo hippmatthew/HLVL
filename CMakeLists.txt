@@ -15,7 +15,7 @@ if (PHYSP_CORE_DUMP)
 endif()
 
 project(PhysicsPlus
-  VERSION 0.19.4
+  VERSION 0.26.1
   LANGUAGES CXX
 )
 
