@@ -51,8 +51,12 @@ void SettingsManager::append()
     "pp::SettingsManager: attempted to append class that does not inherit from pp::Settings"
   );
 
-  static_assert(!std::is_same<General, T>::value,
-    "pp::SettingsManager: attempted to append default settings class, pp::General"
+  static_assert(!std::is_same<GeneralSettings, T>::value,
+    "pp::SettingsManager: attempted to append default settings class pp::GeneralSettings"
+  );
+
+  static_assert(!std::is_same<WindowSettings, T>::value,
+    "pp:SettingsManager: attempted to append default settings class pp::WindowSettings"
   );
 
   if (exists<T>())
@@ -72,8 +76,12 @@ void SettingsManager::erase()
     "pp::SettingsManager: attempted removal of class that does not inherit from pp::Settings"
   );
 
-  static_assert(!std::is_same<General, T>::value,
-    "pp::SettingsManager: attempted removal of default settings class, pp::General"
+  static_assert(!std::is_same<GeneralSettings, T>::value,
+    "pp::SettingsManager: attempted removal of default settings class pp::General"
+  );
+
+  static_assert(!std::is_same<WindowSettings, T>::value,
+    "pp:SettingsManager: attempted removeal of default settings class pp::WindowSettings"
   );
 
   if (!exists<T>())

@@ -1,4 +1,3 @@
-#include "physp/physp_decl.hpp"
 #include "tests/test_classes.hpp"
 
 #include <catch2/catch_test_macros.hpp>
@@ -7,7 +6,7 @@ TEST_CASE( "retrieve", "[unit][settings]" )
 {
   SECTION( "valid" )
   {
-    pp::General& s = pp_settings_manager.settings<pp::General>();
+    auto&& s = pp_general_settings;
 
     CHECK( s.application_name == "PP Application" );
     CHECK( s.application_version == pp_make_version(1, 0, 0) );
@@ -119,11 +118,11 @@ TEST_CASE( "remove", "[unit][settings]" )
 
 TEST_CASE( "mutation", "[unit][settings]" )
 {
-  pp::General& s = pp_settings_manager.settings<pp::General>();
+  auto& s = pp_general_settings;
   s.application_name = "Test";
   s.application_version = 1u;
 
-  pp::General& u = pp_settings_manager.settings<pp::General>();
+  auto& u = pp_general_settings;
 
   CHECK( u.application_name == s.application_name );
   CHECK( u.application_version == s.application_version );
@@ -131,7 +130,7 @@ TEST_CASE( "mutation", "[unit][settings]" )
 
 TEST_CASE( "persistence", "[unit][settings]" )
 {
-  pp::General& s = pp_settings_manager.settings<pp::General>();
+  auto& s = pp_general_settings;
 
   CHECK( s.application_name == "Test" );
   CHECK( s.application_version == 1u );
@@ -139,10 +138,12 @@ TEST_CASE( "persistence", "[unit][settings]" )
 
 TEST_CASE( "general", "[unit][settings]" )
 {
-  pp::General& s_general = pp_settings_manager.settings<pp::General>();
+  auto& s_general = pp_general_settings;
 
   SECTION( "add_layers" )
   {
+    s_general.vk_layers.clear();
+
     std::vector<const char *> testNames = { "name1", "name2", "name3" };
     s_general.add_layers(std::move(testNames));
 
@@ -162,6 +163,8 @@ TEST_CASE( "general", "[unit][settings]" )
 
   SECTION( "add_instance_extensions" )
   {
+    s_general.vk_instance_extensions.clear();
+
     std::vector<const char *> testNames = { "name1", "name2", "name3" };
     s_general.add_instance_extensions(std::move(testNames));
 
@@ -181,6 +184,8 @@ TEST_CASE( "general", "[unit][settings]" )
 
   SECTION( "add_device_extensions" )
   {
+    s_general.vk_device_extensions.clear();
+
     std::vector<const char *> testNames = { "name1", "name2", "name3" };
     s_general.add_device_extensions(std::move(testNames));
 
@@ -200,7 +205,7 @@ TEST_CASE( "general", "[unit][settings]" )
 
   SECTION( "defaults" )
   {
-    s_general = pp::General::default_values();
+    s_general = pp::GeneralSettings::default_values();
 
     CHECK( s_general.application_name == "PP Application" );
     CHECK( s_general.application_version == pp_make_version(1, 0, 0) );
@@ -214,7 +219,7 @@ TEST_CASE( "general", "[unit][settings]" )
 
 TEST_CASE( "window", "[unit][settings]" )
 {
-  pp::Window& s_window = pp_settings_manager.settings<pp::Window>();
+  pp::WindowSettings& s_window = pp_window_settings;
 
   SECTION( "aspect_ratio" )
   {
@@ -224,9 +229,15 @@ TEST_CASE( "window", "[unit][settings]" )
     CHECK( s_window.aspect_ratio() == 1.0f );
   }
 
+  SECTION( "extent" )
+  {
+    CHECK( s_window.extent().width == 4 );
+    CHECK( s_window.extent().height == 4 );
+  }
+
   SECTION( "defaults" )
   {
-    s_window = pp::Window::default_values();
+    s_window = pp::WindowSettings::default_values();
 
     CHECK( s_window.title == "PP Application" );
     CHECK( s_window.size == std::array<unsigned int, 2>{ 1280, 720 } );

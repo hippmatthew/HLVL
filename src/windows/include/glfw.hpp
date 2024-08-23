@@ -22,14 +22,30 @@ class GLFW : public IWindow
 
     static std::vector<const char *> instance_extensions();
     static std::vector<const char *> device_extensions();
+    static void resize_callback(GLFWwindow *, int, int);
 
     bool should_close() const override;
     void poll_events() const override;
+    const vk::Image& image(unsigned long) const override;
+    const vk::raii::ImageView& image_view(unsigned long) const override;
+    unsigned long next_image_index(const vk::raii::Semaphore&) override;
 
     void create_surface(const vk::raii::Instance&) override;
+    void load(std::shared_ptr<Device>) override;
 
   private:
+    void createSwapchain();
+    void recreateSwapchain();
+    void createViews();
+
+  protected:
     GLFWwindow *  gl_window = nullptr;
+    std::shared_ptr<Device> p_device = nullptr;
+    bool modifiedFramebuffer = false;
+
+    vk::raii::SwapchainKHR vk_swapchain = nullptr;
+    std::vector<vk::Image> vk_images;
+    std::vector<vk::raii::ImageView> vk_imageViews;
 };
 
 } // namespace pp::windows

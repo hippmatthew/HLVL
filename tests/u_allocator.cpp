@@ -1,4 +1,3 @@
-#include "physp/physp_decl.hpp"
 #include "tests/test_classes.hpp"
 
 #include <catch2/catch_test_macros.hpp>
@@ -10,7 +9,7 @@ TEST_CASE( "buffer_allocation", "[unit][allocator]" )
 {
   reset_settings();
 
-  pp_settings_manager.settings<pp::General>().vk_layers.emplace_back("VK_LAYER_KHRONOS_validation");
+  pp_general_settings.vk_layers.emplace_back("VK_LAYER_KHRONOS_validation");
 
   pp::Context context;
   context.initialize();
@@ -71,7 +70,7 @@ TEST_CASE( "buffer_access", "[unit][allocator]" )
 {
   reset_settings();
 
-  pp_settings_manager.settings<pp::General>().vk_layers.emplace_back("VK_LAYER_KHRONOS_validation");
+  pp_general_settings.vk_layers.emplace_back("VK_LAYER_KHRONOS_validation");
 
   pp::Context context;
   context.initialize();
@@ -88,7 +87,7 @@ TEST_CASE( "buffer_update", "[unit][allocator]" )
 {
   reset_settings();
 
-  pp_settings_manager.settings<pp::General>().vk_layers.emplace_back("VK_LAYER_KHRONOS_validation");
+  pp_general_settings.vk_layers.emplace_back("VK_LAYER_KHRONOS_validation");
 
   pp::Context context;
   context.initialize();

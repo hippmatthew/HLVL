@@ -17,7 +17,7 @@ else()
 endif()
 
 project(PhysicsPlus
-  VERSION 0.28.0
+  VERSION 0.35.2
   LANGUAGES CXX
 )
 
@@ -93,4 +93,11 @@ endif()
 
 if(PHYSP_BUILD_TESTS)
   add_subdirectory(${CMAKE_SOURCE_DIR}/tests)
+endif()
+
+if (CMAKE_EXPORT_COMPILE_COMMANDS)
+  execute_process(COMMAND ${CMAKE_COMMAND} -E copy
+    ${CMAKE_BINARY_DIR}/compile_commands.json
+    ${CMAKE_SOURCE_DIR}/compile_commands.json
+  )
 endif()

@@ -1,9 +1,7 @@
 #include "src/core/include/stagingbuffer.hpp"
 #include "src/core/include/resource_decl.hpp"
-#include "vulkan/vulkan.hpp"
-#include "vulkan/vulkan_enums.hpp"
+
 #include <limits>
-#include <iostream>
 
 namespace pp
 {

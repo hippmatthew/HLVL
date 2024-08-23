@@ -9,6 +9,8 @@
 
 #endif // physp_vulkan_include
 
+#include "src/core/include/device.hpp"
+
 namespace pp
 {
 
@@ -41,7 +43,12 @@ class IWindow
 
     virtual bool should_close() const = 0;
     virtual void poll_events() const = 0;
+    virtual const vk::Image& image(unsigned long) const = 0;
+    virtual const vk::raii::ImageView& image_view(unsigned long) const = 0;
+    virtual unsigned long next_image_index(const vk::raii::Semaphore&) = 0;
+
     virtual void create_surface(const vk::raii::Instance&) = 0;
+    virtual void load(std::shared_ptr<Device>) = 0;
 
     const vk::raii::SurfaceKHR& surface() const;
 
@@ -52,7 +59,9 @@ class IWindow
     // void add_binding(std::vector<Key>);
 
   protected:
-    // void create_swapchain(const vk::raii::Device&, const vk::raii::PhysicalDevice&);
+    void check_format(const vk::raii::PhysicalDevice&) const;
+    void check_present_mode(const vk::raii::PhysicalDevice&) const;
+    void check_extent(const vk::raii::PhysicalDevice&) const;
 
   protected:
     // std::map<std::string, std::shared_ptr<KeyCallback>> keyMap;

@@ -23,7 +23,8 @@ void Context::initialize(void * p_next)
 {
   if (p_interface == nullptr)
   {
-    pp_settings_manager.settings<General>().add_instance_extensions(windows::GLFW::instance_extensions());
+    pp_general_settings.add_instance_extensions(windows::GLFW::instance_extensions());
+    pp_general_settings.add_device_extensions(windows::GLFW::device_extensions());
     set_interface<windows::GLFW>();
   }
 
@@ -33,12 +34,14 @@ void Context::initialize(void * p_next)
 
   p_device = std::make_shared<Device>(vk_instance, p_interface->surface(), p_next);
   p_allocator = std::make_shared<Allocator>(p_device);
+
+  p_interface->load(p_device);
 }
 
 void Context::createInstance()
 {
   vk::raii::Context vk_context;
-  auto& s_general = pp_settings_manager.settings<General>();
+  auto& s_general = pp_general_settings;
 
   vk::ApplicationInfo appInfo{
     .pApplicationName   = s_general.application_name.c_str(),

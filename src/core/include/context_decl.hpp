@@ -29,7 +29,7 @@ class Context
   private:
     void createInstance();
 
-  private:
+  protected:
     std::shared_ptr<IInterface> p_interface = nullptr;
     std::shared_ptr<Device> p_device = nullptr;
     std::shared_ptr<Allocator> p_allocator = nullptr;

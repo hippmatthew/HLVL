@@ -1,5 +1,8 @@
 # Directories
 /build/
+/builds/
 /.cache/
+/.vscode/
 
 # Files
+compile_commands.json

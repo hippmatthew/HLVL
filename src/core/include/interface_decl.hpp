@@ -2,6 +2,7 @@
 #define physp_core_interface_decl_hpp
 
 #include "src/core/include/iwindow.hpp"
+#include <memory>
 
 namespace pp
 {
@@ -21,7 +22,12 @@ class IInterface
     virtual bool should_close() const = 0;
     virtual void poll_events() const = 0;
     virtual const vk::raii::SurfaceKHR& surface() const = 0;
+    virtual const vk::Image& image(unsigned long) const = 0;
+    virtual const vk::raii::ImageView& image_view(unsigned long) const = 0;
+    virtual unsigned long next_image_index(const vk::raii::Semaphore&) = 0;
+
     virtual void create_surface(const vk::raii::Instance&) = 0;
+    virtual void load(std::shared_ptr<Device>) = 0;
 };
 
 template <typename T>
@@ -38,8 +44,12 @@ class Interface : public IInterface
     bool should_close() const override;
     void poll_events() const override;
     const vk::raii::SurfaceKHR& surface() const override;
+    const vk::Image& image(unsigned long) const override;
+    const vk::raii::ImageView& image_view(unsigned long) const override;
+    unsigned long next_image_index(const vk::raii::Semaphore&) override;
 
     void create_surface(const vk::raii::Instance&) override;
+    void load(std::shared_ptr<Device>) override;
 
     // template <typename K>
     // void add_binding(Key);

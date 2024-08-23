@@ -2,6 +2,7 @@
 #define physp_tests_test_classes_hpp
 
 #include "physp/physp.hpp"
+#include "physp/physp_decl.hpp"
 
 class Test1 : public pp::Settings
 {
@@ -28,8 +29,8 @@ struct Vertex
 
 inline void reset_settings()
 {
-  pp_settings_manager.settings<pp::General>() = pp::General::default_values();
-  pp_settings_manager.settings<pp::Window>() = pp::Window::default_values();
+  pp_general_settings = pp::GeneralSettings::default_values();
+  pp_window_settings = pp::WindowSettings::default_values();
 }
 
 #endif // physp_tests_test_classes_hpp

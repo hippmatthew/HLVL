@@ -1,4 +1,5 @@
 #include "src/core/include/device.hpp"
+#include "src/core/include/settings_decl.hpp"
 
 #include <queue>
 
@@ -167,7 +168,7 @@ const vk::raii::Queue& Device::queue(FamilyType type) const
 void Device::getGPU(const vk::raii::Instance& vk_instance, const vk::raii::SurfaceKHR& vk_surface)
 {
   std::queue<vk::raii::PhysicalDevice> discreteGPUs, integratedGPUs, virtualGPUs;
-  auto& s_general = pp_settings_manager.settings<General>();
+  auto& s_general = pp_general_settings;
 
   vk::raii::PhysicalDevices GPUs(vk_instance);
   for (const auto& GPU : GPUs)
@@ -248,7 +249,7 @@ void Device::createDevice(const void * p_next)
 {
   float queuePriority = 1.0f;
   std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
-  auto& s_general = pp_settings_manager.settings<General>();
+  auto& s_general = pp_general_settings;
 
   for (const auto& type : queueFamilies->supportedFamilies)
   {

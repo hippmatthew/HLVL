@@ -1,3 +1,4 @@
+#include "physp/physp_decl.hpp"
 #include "tests/test_classes.hpp"
 
 #include <catch2/catch_test_macros.hpp>
@@ -10,7 +11,7 @@ TEST_CASE( "run_test", "[endtoend]" )
 {
   reset_settings();
 
-  pp_settings_manager.settings<pp::General>().vk_layers.emplace_back("VK_LAYER_KHRONOS_validation");
+  pp_general_settings.vk_layers.emplace_back("VK_LAYER_KHRONOS_validation");
   pp::Resource<unsigned int> counter(0, pp::ResourceType::uniform);
   unsigned long iterations = 1000;
 

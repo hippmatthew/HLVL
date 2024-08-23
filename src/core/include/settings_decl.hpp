@@ -18,9 +18,12 @@
   ((minor) << 8)  | \
   ((patch))         \
 )
-#define pp_vulkan_version VK_MAKE_API_VERSION(0, 1, 3, 290)
-#define pp_engine_version pp_make_version(0, 28, 0)
+#define pp_vulkan_version   VK_MAKE_API_VERSION(0, 1, 3, 290)
+#define pp_engine_version   pp_make_version(0, 35, 2)
+
 #define pp_settings_manager pp::SettingsManager::instance()
+#define pp_general_settings pp_settings_manager.settings<pp::GeneralSettings>()
+#define pp_window_settings  pp_settings_manager.settings<pp::WindowSettings>()
 
 namespace pp
 {
@@ -38,19 +41,19 @@ class Settings
     virtual Settings& operator = (Settings&&) = default;
 };
 
-class General : public Settings
+class GeneralSettings : public Settings
 {
   public:
-    General() = default;
-    General(const General&) = default;
-    General(General&&) = default;
+    GeneralSettings() = default;
+    GeneralSettings(const GeneralSettings&) = default;
+    GeneralSettings(GeneralSettings&&) = default;
 
-    ~General() = default;
+    ~GeneralSettings() = default;
 
-    General& operator = (const General&) = default;
-    General& operator = (General&&) = default;
+    GeneralSettings& operator = (const GeneralSettings&) = default;
+    GeneralSettings& operator = (GeneralSettings&&) = default;
 
-    static General default_values();
+    static GeneralSettings default_values();
 
     void add_layers(std::vector<const char *>&&);
     void add_instance_extensions(std::vector<const char *>&&);
@@ -66,27 +69,33 @@ class General : public Settings
     bool portability_enabled = false;
 };
 
-class Window : public Settings
+class WindowSettings : public Settings
 {
   public:
-    Window() = default;
-    Window(const Window&) = default;
-    Window(Window&&) = default;
+    WindowSettings() = default;
+    WindowSettings(const WindowSettings&) = default;
+    WindowSettings(WindowSettings&&) = default;
 
-    ~Window() = default;
+    ~WindowSettings() = default;
 
-    Window& operator = (const Window&) = default;
-    Window& operator = (Window&&) = default;
+    WindowSettings& operator = (const WindowSettings&) = default;
+    WindowSettings& operator = (WindowSettings&&) = default;
 
-    static Window default_values();
+    static WindowSettings default_values();
 
     float aspect_ratio() const;
+    vk::Extent2D extent() const;
 
   public:
-    std::string title = "PP Application";
-    std::array<unsigned int, 2> size = { 1280u, 720u };
-    std::array<float, 2> scale = { 1.0f, 1.0f };
     bool initialized = false;
+
+    std::string title = "PP Application";
+    std::array<unsigned int, 2> size = { 1280, 720 };
+    std::array<float, 2> scale = { 1.0f, 1.0f };
+
+    vk::Format format = vk::Format::eB8G8R8A8Srgb;
+    vk::ColorSpaceKHR color_space = vk::ColorSpaceKHR::eSrgbNonlinear;
+    vk::PresentModeKHR present_mode = vk::PresentModeKHR::eMailbox;
 };
 
 class SettingsManager

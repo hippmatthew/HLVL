@@ -118,7 +118,11 @@ defines()
   input ")"
   input "#define pp_vulkan_version VK_MAKE_API_VERSION(VK_API_VERSION_1_3, 1, 3, 290)"
   input "#define pp_engine_version pp_make_version(0, 0, 0)"
+  space
+
   input "#define pp_settings_manager pp::SettingsManager::instance()"
+  input "#define pp_general_settings pp_settings_manager.settings<pp::GeneralSettings>()"
+  input "#define pp_window_settings  pp_settings_manager.settings<pp::WindowSettings>()"
 }
 
 forward_declarations()
@@ -242,10 +246,10 @@ space
 read_file settings_decl "Settings"
 space
 
-read_file settings_decl "General : public Settings"
+read_file settings_decl "GeneralSettings : public Settings"
 space
 
-read_file settings_decl "Window : public Settings"
+read_file settings_decl "WindowSettings : public Settings"
 space
 
 read_file settings_decl "SettingsManager"
@@ -294,13 +298,13 @@ space
 read_numbered context 9 17
 space
 
-read_numbered interface 9 31
+read_numbered interface 9 55
 space
 
 read_numbered resource 9 77
 space
 
-read_numbered settings 12 87
+read_numbered settings 12 95
 space
 
 input "} // namespace pp"
