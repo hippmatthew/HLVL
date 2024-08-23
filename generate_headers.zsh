@@ -154,6 +154,18 @@ forward_declarations()
   input "} // namespace pp::windows"
 }
 
+mainloop_macros()
+{
+  input "#define pp_loop_start \\"
+  input "\tmainloop: \\"
+  input "\t\tpp_general_settings.p_context->poll_events();"
+  space
+
+  input "#define pp_loop_end(condition) \\"
+  input "\tif (!(pp_general_settings.p_context->should_close() || condition)) \\"
+  input "\t\tgoto mainloop;"
+}
+
 log "Generating Physics+ version ${version} headers on system ${system}"
 
 if [[ ! -d "${build_dir}/include/physp" ]]; then
@@ -290,6 +302,8 @@ space
 
 input "#include \"./physp_decl.hpp\""
 space
+
+mainloop_macros
 
 input "namespace pp"
 input "{"

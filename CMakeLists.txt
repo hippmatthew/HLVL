@@ -17,7 +17,7 @@ else()
 endif()
 
 project(PhysicsPlus
-  VERSION 0.35.2
+  VERSION 0.37.2
   LANGUAGES CXX
 )
 

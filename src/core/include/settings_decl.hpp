@@ -19,7 +19,7 @@
   ((patch))         \
 )
 #define pp_vulkan_version   VK_MAKE_API_VERSION(0, 1, 3, 290)
-#define pp_engine_version   pp_make_version(0, 35, 2)
+#define pp_engine_version   pp_make_version(0, 37, 2)
 
 #define pp_settings_manager pp::SettingsManager::instance()
 #define pp_general_settings pp_settings_manager.settings<pp::GeneralSettings>()
@@ -41,6 +41,8 @@ class Settings
     virtual Settings& operator = (Settings&&) = default;
 };
 
+class Context;
+
 class GeneralSettings : public Settings
 {
   public:
@@ -60,13 +62,17 @@ class GeneralSettings : public Settings
     void add_device_extensions(std::vector<const char *>&&);
 
   public:
+    Context * p_context = nullptr;
+    bool portability_enabled = false;
+
     std::string application_name = "PP Application";
     unsigned int application_version = pp_make_version(1, 0, 0);
+
     std::vector<const char *> vk_layers;
     std::vector<const char *> vk_instance_extensions;
     std::vector<const char *> vk_device_extensions;
+
     vk::PhysicalDeviceFeatures vk_physical_device_features;
-    bool portability_enabled = false;
 };
 
 class WindowSettings : public Settings

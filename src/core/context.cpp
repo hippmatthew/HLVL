@@ -1,9 +1,13 @@
 #include "src/core/include/context.hpp"
-#include "src/core/include/settings_decl.hpp"
 #include "src/windows/include/glfw.hpp"
 
 namespace pp
 {
+
+Context::Context()
+{
+  pp_general_settings.p_context = this;
+}
 
 Context::~Context()
 {
@@ -17,6 +21,16 @@ Context::~Context()
 Allocator& Context::allocator() const
 {
   return *p_allocator;
+}
+
+bool Context::should_close() const
+{
+  return p_interface->should_close();
+}
+
+void Context::poll_events() const
+{
+  p_interface->poll_events();
 }
 
 void Context::initialize(void * p_next)

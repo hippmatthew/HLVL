@@ -1,3 +1,4 @@
+#include "physp/physp.hpp"
 #include "physp/physp_decl.hpp"
 #include "tests/test_classes.hpp"
 
@@ -25,8 +26,14 @@ TEST_CASE( "run_test", "[endtoend]" )
 
     allocator.new_allocation({ pp::Locality::device, { &counter }});
 
-    for (unsigned long i = 0; i < iterations; ++i)
-      counter = *counter + 1;
+    unsigned int iteration = 0;
+
+    pp_loop_start
+
+    counter = *counter + 1;
+    ++iteration;
+
+    pp_loop_end( iteration == iterations );
 
     allocator.wait();
   }

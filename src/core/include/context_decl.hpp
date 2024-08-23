@@ -10,7 +10,7 @@ namespace pp
 class Context
 {
   public:
-    Context() = default;
+    Context();
     Context(Context&) = delete;
     Context(Context&&) = delete;
 
@@ -20,6 +20,8 @@ class Context
     Context& operator = (Context&&) = delete;
 
     Allocator& allocator() const;
+    bool should_close() const;
+    void poll_events() const;
 
     void initialize(void * p_next = nullptr);
 
