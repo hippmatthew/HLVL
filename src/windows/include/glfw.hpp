@@ -20,9 +20,16 @@ class GLFW : public IWindow
     GLFW();
     ~GLFW() override;
 
+    #ifdef TESTS
+      static GLFWwindow * p_window;
+      static bool resized;
+    #endif // TESTS
+
     static std::vector<const char *> instance_extensions();
     static std::vector<const char *> device_extensions();
     static void resize_callback(GLFWwindow *, int, int);
+    static void key_callback(GLFWwindow *, int, int, int, int);
+    static Key get_key(int);
 
     bool should_close() const override;
     void poll_events() const override;
@@ -33,15 +40,17 @@ class GLFW : public IWindow
     void create_surface(const vk::raii::Instance&) override;
     void load(std::shared_ptr<Device>) override;
 
-  private:
+  protected:
     void createSwapchain();
     void recreateSwapchain();
     void createViews();
 
   protected:
-    GLFWwindow *  gl_window = nullptr;
+    GLFWwindow * gl_window = nullptr;
     std::shared_ptr<Device> p_device = nullptr;
     bool modifiedFramebuffer = false;
+    int keyState = -1;
+    unsigned int keyCount = 0;
 
     vk::raii::SwapchainKHR vk_swapchain = nullptr;
     std::vector<vk::Image> vk_images;

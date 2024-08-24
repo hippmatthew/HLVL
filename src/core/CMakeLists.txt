@@ -9,7 +9,6 @@ set(HEADERS
   ${CMAKE_CURRENT_SOURCE_DIR}/include/interface.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/interface_decl.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/iwindow.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/iwindow_decl.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/resource.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/resource_decl.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/settings.hpp

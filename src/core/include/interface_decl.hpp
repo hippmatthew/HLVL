@@ -24,8 +24,10 @@ class IInterface
     virtual const vk::raii::SurfaceKHR& surface() const = 0;
     virtual const vk::Image& image(unsigned long) const = 0;
     virtual const vk::raii::ImageView& image_view(unsigned long) const = 0;
-    virtual unsigned long next_image_index(const vk::raii::Semaphore&) = 0;
 
+    virtual unsigned long next_image_index(const vk::raii::Semaphore&) = 0;
+    virtual void add_keybind(Key, std::function<void()>) = 0;
+    virtual void add_keybind(std::vector<Key>&&, std::function<void()>) = 0;
     virtual void create_surface(const vk::raii::Instance&) = 0;
     virtual void load(std::shared_ptr<Device>) = 0;
 };
@@ -46,13 +48,12 @@ class Interface : public IInterface
     const vk::raii::SurfaceKHR& surface() const override;
     const vk::Image& image(unsigned long) const override;
     const vk::raii::ImageView& image_view(unsigned long) const override;
-    unsigned long next_image_index(const vk::raii::Semaphore&) override;
 
+    unsigned long next_image_index(const vk::raii::Semaphore&) override;
+    void add_keybind(Key, std::function<void()>) override;
+    void add_keybind(std::vector<Key>&&, std::function<void()>) override;
     void create_surface(const vk::raii::Instance&) override;
     void load(std::shared_ptr<Device>) override;
-
-    // template <typename K>
-    // void add_binding(Key);
 
   private:
     T window;

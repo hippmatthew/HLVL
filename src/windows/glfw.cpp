@@ -1,11 +1,18 @@
+#include "src/core/include/iwindow.hpp"
 #include "src/core/include/settings.hpp"
 #include "src/windows/include/glfw.hpp"
 
 #include <limits>
 #include <stdexcept>
+#include <iostream>
 
 namespace pp::windows
 {
+
+#ifdef TESTS
+  GLFWwindow * GLFW::p_window = nullptr;
+  bool GLFW::resized = false;
+#endif // TESTS
 
 GLFW::GLFW()
 {
@@ -18,7 +25,6 @@ GLFW::GLFW()
   }
 
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-  glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
   gl_window = glfwCreateWindow(
     s_window.size[0],
@@ -34,6 +40,11 @@ GLFW::GLFW()
 
   glfwSetWindowUserPointer(gl_window, this);
   glfwSetFramebufferSizeCallback(gl_window, GLFW::resize_callback);
+  glfwSetKeyCallback(gl_window, GLFW::key_callback);
+
+  #ifdef TESTS
+    p_window = gl_window;
+  #endif // TESTS
 }
 
 GLFW::~GLFW()
@@ -70,6 +81,9 @@ bool GLFW::should_close() const
 void GLFW::poll_events() const
 {
   glfwPollEvents();
+
+  if (keyState != -1)
+    call_keybind(keyState);
 }
 
 const vk::Image& GLFW::image(unsigned long index) const
@@ -111,12 +125,174 @@ void GLFW::load(std::shared_ptr<Device> device)
   createViews();
 }
 
-void GLFW::resize_callback(GLFWwindow * window, int width, int height)
+void GLFW::resize_callback(GLFWwindow * w, int width, int height)
 {
-  auto gui = reinterpret_cast<GLFW *>(glfwGetWindowUserPointer(window));
+  auto * window = reinterpret_cast<GLFW *>(glfwGetWindowUserPointer(w));
+  window->modifiedFramebuffer = true;
+  resized = true;
+}
 
-  glfwSetWindowSize(gui->gl_window, width, height);
-  gui->modifiedFramebuffer = true;
+void GLFW::key_callback(GLFWwindow * w, int key, int, int action, int)
+{
+  auto window = reinterpret_cast<GLFW *>(glfwGetWindowUserPointer(w));
+
+  if (action == GLFW_PRESS)
+  {
+    if (window->keyState == -1)
+      window->keyState = 0;
+
+    window->keyState |= get_key(key);
+    ++window->keyCount;
+
+    if (window->keyCount > 1)
+      window->keyState |= (1 << 31);
+  }
+
+  if (action == GLFW_RELEASE)
+  {
+    window->keyState &= ~get_key(key);
+    --window->keyCount;
+
+    if (window->keyCount == 0)
+      window->keyState = -1;
+  }
+}
+
+Key GLFW::get_key(int key)
+{
+  switch(key)
+  {
+    case GLFW_KEY_A:
+      return a;
+    case GLFW_KEY_B:
+      return b;
+    case GLFW_KEY_C:
+      return c;
+    case GLFW_KEY_D:
+      return d;
+    case GLFW_KEY_E:
+      return e;
+    case GLFW_KEY_F:
+      return f;
+    case GLFW_KEY_G:
+      return g;
+    case GLFW_KEY_H:
+      return h;
+    case GLFW_KEY_I:
+      return i;
+    case GLFW_KEY_J:
+      return j;
+    case GLFW_KEY_K:
+      return k;
+    case GLFW_KEY_L:
+      return l;
+    case GLFW_KEY_M:
+      return m;
+    case GLFW_KEY_N:
+      return n;
+    case GLFW_KEY_O:
+      return o;
+    case GLFW_KEY_P:
+      return p;
+    case GLFW_KEY_Q:
+      return q;
+    case GLFW_KEY_R:
+      return r;
+    case GLFW_KEY_S:
+      return s;
+    case GLFW_KEY_T:
+      return t;
+    case GLFW_KEY_U:
+      return u;
+    case GLFW_KEY_V:
+      return v;
+    case GLFW_KEY_W:
+      return w;
+    case GLFW_KEY_X:
+      return x;
+    case GLFW_KEY_Y:
+      return y;
+    case GLFW_KEY_Z:
+      return z;
+    case GLFW_KEY_0:
+      return zero;
+    case GLFW_KEY_1:
+      return one;
+    case GLFW_KEY_2:
+      return two;
+    case GLFW_KEY_3:
+      return three;
+    case GLFW_KEY_4:
+      return four;
+    case GLFW_KEY_5:
+      return five;
+    case GLFW_KEY_6:
+      return six;
+    case GLFW_KEY_7:
+      return seven;
+    case GLFW_KEY_8:
+      return eight;
+    case GLFW_KEY_9:
+      return nine;
+    case GLFW_KEY_SPACE:
+      return space;
+    case GLFW_KEY_APOSTROPHE:
+      return apostrophe;
+    case GLFW_KEY_COMMA:
+      return comma;
+    case GLFW_KEY_MINUS:
+      return minus;
+    case GLFW_KEY_PERIOD:
+      return period;
+    case GLFW_KEY_SLASH:
+      return slash;
+    case GLFW_KEY_BACKSLASH:
+      return backslash;
+    case GLFW_KEY_SEMICOLON:
+      return semicolon;
+    case GLFW_KEY_EQUAL:
+      return equal;
+    case GLFW_KEY_LEFT_BRACKET:
+      return left_bracket;
+    case GLFW_KEY_RIGHT_BRACKET:
+      return right_bracket;
+    case GLFW_KEY_GRAVE_ACCENT:
+      return grave;
+    case GLFW_KEY_ESCAPE:
+      return escape;
+    case GLFW_KEY_ENTER:
+      return enter;
+    case GLFW_KEY_TAB:
+      return tab;
+    case GLFW_KEY_BACKSPACE:
+      return backspace;
+    case GLFW_KEY_UP:
+      return up;
+    case GLFW_KEY_DOWN:
+      return down;
+    case GLFW_KEY_LEFT:
+      return left;
+    case GLFW_KEY_RIGHT:
+      return right;
+    case GLFW_KEY_CAPS_LOCK:
+      return caps_lock;
+    case GLFW_KEY_LEFT_SHIFT:
+      return left_shift;
+    case GLFW_KEY_LEFT_CONTROL:
+      return left_control;
+    case GLFW_KEY_LEFT_ALT:
+      return left_alt;
+    case GLFW_KEY_LEFT_SUPER:
+      return left_super;
+    case GLFW_KEY_RIGHT_SHIFT:
+      return right_shift;
+    case GLFW_KEY_RIGHT_ALT:
+      return right_alt;
+    case GLFW_KEY_RIGHT_SUPER:
+      return right_super;
+    default:
+      return unknown;
+  }
 }
 
 void GLFW::createSwapchain()

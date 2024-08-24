@@ -22,6 +22,26 @@ class Test2 : public pp::Settings
     int b = 0;
 };
 
+class KeyTest
+{
+  public:
+    static KeyTest * instance;
+
+  public:
+    KeyTest()
+    {
+      KeyTest::instance = this;
+      a = both = false;
+    }
+
+    static void pressA() { KeyTest::instance->a = true; }
+    static void pressAB() { KeyTest::instance->both = true; }
+
+  public:
+    bool a, both;
+
+};
+
 struct Vertex
 {
   unsigned int x, y, z;

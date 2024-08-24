@@ -7,13 +7,14 @@ namespace pp
 {
 
 template <typename T>
-void Context::set_interface()
+Context& Context::set_interface()
 {
   static_assert(std::is_base_of<IWindow, T>::value,
     "pp::Context: attempted to set interface to non-window type"
   );
 
   p_interface = std::make_shared<Interface<T>>();
+  return *this;
 }
 
 } // namespace pp

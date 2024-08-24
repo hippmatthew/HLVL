@@ -1,6 +1,8 @@
 #include "src/core/include/context.hpp"
 #include "src/windows/include/glfw.hpp"
 
+#include <stdexcept>
+
 namespace pp
 {
 
@@ -33,7 +35,7 @@ void Context::poll_events() const
   p_interface->poll_events();
 }
 
-void Context::initialize(void * p_next)
+Context& Context::initialize(void * p_next)
 {
   if (p_interface == nullptr)
   {
@@ -50,6 +52,28 @@ void Context::initialize(void * p_next)
   p_allocator = std::make_shared<Allocator>(p_device);
 
   p_interface->load(p_device);
+
+  return *this;
+}
+
+Context& Context::add_keybind(Key key, std::function<void()> callback)
+{
+  if (p_interface == nullptr)
+    throw std::runtime_error("pp::Context: attempted to bind key callback to a null interface");
+
+  p_interface->add_keybind(key, callback);
+
+  return *this;
+}
+
+Context& Context::add_keybind(std::vector<Key>&& keys, std::function<void()> callback)
+{
+  if (p_interface == nullptr)
+    throw std::runtime_error("pp::Context: attempted to bind key callback to a null interface");
+
+  p_interface->add_keybind(std::move(keys), callback);
+
+  return *this;
 }
 
 void Context::createInstance()

@@ -23,10 +23,12 @@ class Context
     bool should_close() const;
     void poll_events() const;
 
-    void initialize(void * p_next = nullptr);
+    Context& initialize(void * p_next = nullptr);
+    Context& add_keybind(Key, std::function<void()>);
+    Context& add_keybind(std::vector<Key>&&, std::function<void()>);
 
     template <typename T>
-    void set_interface();
+    Context& set_interface();
 
   private:
     void createInstance();

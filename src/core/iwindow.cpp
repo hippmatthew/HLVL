@@ -2,6 +2,7 @@
 #include "src/core/include/settings_decl.hpp"
 #include "vulkan/vulkan_enums.hpp"
 #include <limits>
+#include <stdexcept>
 
 namespace pp
 {
@@ -9,6 +10,36 @@ namespace pp
 const vk::raii::SurfaceKHR& IWindow::surface() const
 {
   return vk_surface;
+}
+
+void IWindow::add_keybind(Key key, std::function<void()> callback)
+{
+  validateBinding(key);
+
+  key_map.emplace(std::make_pair(key, callback));
+}
+
+void IWindow::add_keybind(std::vector<Key>&& keys, std::function<void()> callback)
+{
+  int bits = (1 << 31);
+  for (Key& key : keys)
+    bits |= key;
+
+  validateBinding(bits);
+
+  key_map.emplace(std::make_pair(bits, callback));
+}
+
+void IWindow::validateBinding(int bits) const
+{
+  if (key_map.find(bits) != key_map.end())
+    throw std::runtime_error("pp::IWindow: attempted to submit callback to a keybind that alread has one");
+}
+
+void IWindow::call_keybind(int bits) const
+{
+  if (key_map.find(bits) != key_map.end())
+    key_map.at(bits)();
 }
 
 void IWindow::check_format(const vk::raii::PhysicalDevice& vk_physicalDevice) const

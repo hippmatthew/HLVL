@@ -43,6 +43,18 @@ unsigned long Interface<T>::next_image_index(const vk::raii::Semaphore& semaphor
 }
 
 template <typename T>
+void Interface<T>::add_keybind(Key key, std::function<void()> callback)
+{
+  window.add_keybind(key, callback);
+}
+
+template <typename T>
+void Interface<T>::add_keybind(std::vector<Key>&& keys, std::function<void()> callback)
+{
+  window.add_keybind(std::move(keys), callback);
+}
+
+template <typename T>
 void Interface<T>::create_surface(const vk::raii::Instance& vk_instance)
 {
   window.create_surface(vk_instance);

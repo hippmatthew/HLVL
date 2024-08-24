@@ -203,6 +203,10 @@ space
 read_numbered device 11 18
 space
 
+# enum Key
+read_numbered iwindow 17 84
+space
+
 # enum Locality
 read_numbered allocation 12 16
 space
@@ -249,10 +253,7 @@ space
 read_file resource_decl "Resource" 1
 space
 
-read_file iwindow_decl "IWindow"
-space
-
-read_file iwindow_decl "KeyCallback"
+read_file iwindow "IWindow"
 space
 
 read_file settings_decl "Settings"
@@ -309,10 +310,10 @@ input "namespace pp"
 input "{"
 space
 
-read_numbered context 9 17
+read_numbered context 9 18
 space
 
-read_numbered interface 9 55
+read_numbered interface 9 67
 space
 
 read_numbered resource 9 77
