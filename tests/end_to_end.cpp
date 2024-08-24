@@ -6,20 +6,14 @@
 #include <exception>
 #include <iostream>
 
-bool pressed = false;
-
 KeyTest * KeyTest::instance = nullptr;
-
-void pressA()
-{
-  pressed = true;
-}
 
 TEST_CASE( "run_test", "[endtoend]" )
 {
   reset_settings();
 
   pp_general_settings.vk_layers.emplace_back("VK_LAYER_KHRONOS_validation");
+  pp_general_settings.draw_window = true;
 
   pp::Resource<unsigned int> counter(0, pp::ResourceType::uniform);
   unsigned long iterations = 1000;

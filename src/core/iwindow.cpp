@@ -44,35 +44,30 @@ void IWindow::call_keybind(int bits) const
 
 void IWindow::check_format(const vk::raii::PhysicalDevice& vk_physicalDevice) const
 {
-  auto& s_window = pp_window_settings;
   auto formats = vk_physicalDevice.getSurfaceFormatsKHR(*vk_surface);
 
   for (const auto& format : formats)
   {
-    if (format.format == s_window.format && format.colorSpace == s_window.color_space)
+    if (format.format == pp_window_settings.format && format.colorSpace == pp_window_settings.color_space)
       return;
   }
 
-  s_window.format = formats[0].format;
-  s_window.color_space = formats[0].colorSpace;
+  pp_window_settings.format = formats[0].format;
+  pp_window_settings.color_space = formats[0].colorSpace;
 }
 
 void IWindow::check_present_mode(const vk::raii::PhysicalDevice& vk_physicalDevice) const
 {
-  auto& s_window = pp_window_settings;
-
   for (const auto& mode : vk_physicalDevice.getSurfacePresentModesKHR(*vk_surface))
-    if (mode == s_window.present_mode) return;
+    if (mode == pp_window_settings.present_mode) return;
 
-  s_window.present_mode = vk::PresentModeKHR::eFifo;
+  pp_window_settings.present_mode = vk::PresentModeKHR::eFifo;
 }
 
 void IWindow::check_extent(const vk::raii::PhysicalDevice& vk_physicalDevice) const
 {
-  auto& s_window = pp_window_settings;
-
-  if (s_window.extent().width != std::numeric_limits<unsigned int>::max() &&
-        s_window.extent().height != std::numeric_limits<unsigned int>::max())
+  if (pp_window_settings.extent().width != std::numeric_limits<unsigned int>::max() &&
+        pp_window_settings.extent().height != std::numeric_limits<unsigned int>::max())
   {
     return;
   }
@@ -88,10 +83,14 @@ void IWindow::check_extent(const vk::raii::PhysicalDevice& vk_physicalDevice) co
 
   for (unsigned int i = 0; i < 2; ++i)
   {
-    if (s_window.size[i] * s_window.scale[i] < range[2 * i])
-      s_window.size[i] = range[2 * i] / s_window.scale[i];
-    else if (s_window.size[i] * s_window.scale[i] > range[2 * i + 1])
-      s_window.size[i] = range[2 * i + 1] / s_window.scale[i];
+    if (pp_window_settings.size[i] * pp_window_settings.scale[i] < range[2 * i])
+    {
+      pp_window_settings.size[i] = range[2 * i] / pp_window_settings.scale[i];
+    }
+    else if (pp_window_settings.size[i] * pp_window_settings.scale[i] > range[2 * i + 1])
+    {
+      pp_window_settings.size[i] = range[2 * i + 1] / pp_window_settings.scale[i];
+    }
   }
 }
 

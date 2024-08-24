@@ -16,27 +16,25 @@ namespace pp::windows
 
 GLFW::GLFW()
 {
-  auto& s_window = pp_window_settings;
-
-  if (!s_window.initialized)
+  if (!pp_window_settings.initialized)
   {
     glfwInit();
-    s_window.initialized = true;
+    pp_window_settings.initialized = true;
   }
 
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
   gl_window = glfwCreateWindow(
-    s_window.size[0],
-    s_window.size[1],
-    s_window.title.c_str(),
+    pp_window_settings.size[0],
+    pp_window_settings.size[1],
+    pp_window_settings.title.c_str(),
     nullptr, nullptr
   );
 
   float sx, sy;
   glfwGetWindowContentScale(gl_window, &sx, &sy);
 
-  s_window.scale = { sx, sy };
+  pp_window_settings.scale = { sx, sy };
 
   glfwSetWindowUserPointer(gl_window, this);
   glfwSetFramebufferSizeCallback(gl_window, GLFW::resize_callback);
@@ -55,11 +53,10 @@ GLFW::~GLFW()
 
 std::vector<const char *> GLFW::instance_extensions()
 {
-  auto& s_window = pp_window_settings;
-  if (!s_window.initialized)
+  if (!pp_window_settings.initialized)
   {
     glfwInit();
-    s_window.initialized = true;
+    pp_window_settings.initialized = true;
   }
 
   unsigned int count = 0;
@@ -297,8 +294,6 @@ Key GLFW::get_key(int key)
 
 void GLFW::createSwapchain()
 {
-  auto& s_window = pp_window_settings;
-
   check_format(p_device->physical());
   check_present_mode(p_device->physical());
   check_extent(p_device->physical());
@@ -312,9 +307,9 @@ void GLFW::createSwapchain()
   vk::SwapchainCreateInfoKHR ci_swapchain{
     .surface                = *vk_surface,
     .minImageCount          = imageCount,
-    .imageFormat            = s_window.format,
-    .imageColorSpace        = s_window.color_space,
-    .imageExtent            = s_window.extent(),
+    .imageFormat            = pp_window_settings.format,
+    .imageColorSpace        = pp_window_settings.color_space,
+    .imageExtent            = pp_window_settings.extent(),
     .imageArrayLayers       = 1,
     .imageUsage             = vk::ImageUsageFlagBits::eColorAttachment,
     .imageSharingMode       = vk::SharingMode::eExclusive,
@@ -322,7 +317,7 @@ void GLFW::createSwapchain()
     .pQueueFamilyIndices    = nullptr,
     .preTransform           = capabilities.currentTransform,
     .compositeAlpha         = vk::CompositeAlphaFlagBitsKHR::eOpaque,
-    .presentMode            = s_window.present_mode,
+    .presentMode            = pp_window_settings.present_mode,
     .clipped                = vk::True,
     .oldSwapchain           = nullptr
   };

@@ -35,7 +35,11 @@ Device::QueueFamilies::QueueFamilies(const vk::raii::PhysicalDevice& vk_physical
   {
     unsigned int types = 0x0000000u;
 
-    if (family.queueFlags & vk::QueueFlagBits::eGraphics && vk_physicalDevice.getSurfaceSupportKHR(index, *vk_surface))
+    bool surfaceSupport = true;
+    if (pp_general_settings.draw_window)
+      surfaceSupport = vk_physicalDevice.getSurfaceSupportKHR(index, *vk_surface);
+
+    if (family.queueFlags & vk::QueueFlagBits::eGraphics && surfaceSupport)
       types |= PHYSP_GRAPHICS_QUEUE_BIT | PHYSP_PRESENT_QUEUE_BIT;
 
     if (family.queueFlags & vk::QueueFlagBits::eCompute)
@@ -168,7 +172,6 @@ const vk::raii::Queue& Device::queue(FamilyType type) const
 void Device::getGPU(const vk::raii::Instance& vk_instance, const vk::raii::SurfaceKHR& vk_surface)
 {
   std::queue<vk::raii::PhysicalDevice> discreteGPUs, integratedGPUs, virtualGPUs;
-  auto& s_general = pp_general_settings;
 
   vk::raii::PhysicalDevices GPUs(vk_instance);
   for (const auto& GPU : GPUs)
@@ -188,7 +191,7 @@ void Device::getGPU(const vk::raii::Instance& vk_instance, const vk::raii::Surfa
     if (!hasAllFamily) continue;
 
     bool supportsExtensions = true;
-    for (const char * extension : s_general.vk_device_extensions)
+    for (const char * extension : pp_general_settings.vk_device_extensions)
     {
       supportsExtensions = false;
       for (const auto& property : GPU.enumerateDeviceExtensionProperties())
@@ -204,8 +207,12 @@ void Device::getGPU(const vk::raii::Instance& vk_instance, const vk::raii::Surfa
     }
     if (!supportsExtensions) continue;
 
-    if (GPU.getSurfaceFormatsKHR(*vk_surface).empty()) continue;
-    if (GPU.getSurfacePresentModesKHR(*vk_surface).empty()) continue;
+
+    if (pp_general_settings.draw_window)
+    {
+      if (GPU.getSurfaceFormatsKHR(*vk_surface).empty()) continue;
+      if (GPU.getSurfacePresentModesKHR(*vk_surface).empty()) continue;
+    }
 
     switch (properties.deviceType)
     {
@@ -236,20 +243,19 @@ void Device::getGPU(const vk::raii::Instance& vk_instance, const vk::raii::Surfa
   {
     if (std::string(extension.extensionName) == VK_PORTABILITY_SUBSET_NAME)
     {
-      s_general.add_device_extensions({ VK_PORTABILITY_SUBSET_NAME });
+      pp_general_settings.add_device_extensions({ VK_PORTABILITY_SUBSET_NAME });
       portability = true;
       break;
     }
   }
-  if (portability ^ s_general.portability_enabled)
-    s_general.portability_enabled = !s_general.portability_enabled;
+  if (portability ^ pp_general_settings.portability_enabled)
+    pp_general_settings.portability_enabled = !pp_general_settings.portability_enabled;
 }
 
 void Device::createDevice(const void * p_next)
 {
   float queuePriority = 1.0f;
   std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
-  auto& s_general = pp_general_settings;
 
   for (const auto& type : queueFamilies->supportedFamilies)
   {
@@ -268,9 +274,9 @@ void Device::createDevice(const void * p_next)
     .pNext                    = p_next,
     .queueCreateInfoCount     = static_cast<unsigned int>(queueCreateInfos.size()),
     .pQueueCreateInfos        = queueCreateInfos.data(),
-    .enabledExtensionCount    = static_cast<unsigned int>(s_general.vk_device_extensions.size()),
-    .ppEnabledExtensionNames  = s_general.vk_device_extensions.data(),
-    .pEnabledFeatures         = &s_general.vk_physical_device_features
+    .enabledExtensionCount    = static_cast<unsigned int>(pp_general_settings.vk_device_extensions.size()),
+    .ppEnabledExtensionNames  = pp_general_settings.vk_device_extensions.data(),
+    .pEnabledFeatures         = &pp_general_settings.vk_physical_device_features
   };
 
   vk_device = vk_physicalDevice.createDevice(ci_device);
