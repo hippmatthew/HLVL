@@ -20,9 +20,14 @@ Context::~Context()
   p_device.reset();
 }
 
-Allocator& Context::allocator() const
+Allocator& Context::allocator()
 {
   return *p_allocator;
+}
+
+ECSController& Context::ecs_controller()
+{
+  return ecsController;
 }
 
 bool Context::should_close() const

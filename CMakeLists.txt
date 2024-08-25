@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20.0)
 
 option(PHYSP_GENERATE_HEADERS "Generates Headers. Requires zsh." ON)
 option(PHYSP_BUILD_TESTS "Builds tests. Requires Catch2." ON)
-option(PHYSP_DEBUG "Enables debug flags and optimization level to 0" OFF)
+option(PHYSP_DEBUG "Enables debug flags and optimization level to 0" ON)
 
 if(NOT CMAKE_CXX_STANDARD GREATER_EQUAL 20)
   set(CMAKE_CXX_STANDARD 20)
@@ -98,11 +98,4 @@ endif()
 
 if(PHYSP_BUILD_TESTS)
   add_subdirectory(${CMAKE_SOURCE_DIR}/tests)
-endif()
-
-if (CMAKE_EXPORT_COMPILE_COMMANDS)
-  execute_process(COMMAND ${CMAKE_COMMAND} -E copy
-    ${CMAKE_BINARY_DIR}/compile_commands.json
-    ${CMAKE_SOURCE_DIR}/compile_commands.json
-  )
 endif()

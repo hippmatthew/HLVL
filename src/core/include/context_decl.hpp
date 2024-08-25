@@ -1,8 +1,9 @@
 #ifndef physp_core_context_decl_hpp
 #define physp_core_context_decl_hpp
 
-#include "src/core/include/interface.hpp"
 #include "src/core/include/allocator.hpp"
+#include "src/core/include/interface.hpp"
+#include "src/core/include/ecscontroller.hpp"
 
 namespace pp
 {
@@ -19,7 +20,9 @@ class Context
     Context& operator = (Context&) = delete;
     Context& operator = (Context&&) = delete;
 
-    Allocator& allocator() const;
+    Allocator& allocator();
+    ECSController& ecs_controller();
+
     bool should_close() const;
     void poll_events() const;
 
@@ -34,6 +37,8 @@ class Context
     void createInstance();
 
   protected:
+    ECSController ecsController;
+
     std::shared_ptr<IInterface> p_interface = nullptr;
     std::shared_ptr<Device> p_device = nullptr;
     std::shared_ptr<Allocator> p_allocator = nullptr;

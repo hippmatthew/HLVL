@@ -132,15 +132,18 @@ forward_declarations()
   input "class Buffer;"
   input "class Context;"
   input "class Device;"
+  input "class ECSController;"
+  input "class EntityManager;"
   input "class IInterface;"
   input "template<typename T> class Interface;"
   input "class IResource;"
   input "template<typename T> class Resource;"
   input "class IWindow;"
-  input "class KeyCallback;"
   input "class Settings;"
-  input "class General;"
+  input "class GeneralSettings;"
+  input "class WindowSettings;"
   input "class SettingsManager;"
+  input "class Signature;"
   input "class StagingBuffer;"
   space
 
@@ -199,6 +202,9 @@ space
 forward_declarations
 space
 
+input "using Entity = unsigned long;"
+space
+
 # enum FamilyType
 read_numbered device 11 18
 space
@@ -235,6 +241,12 @@ space
 read_file allocation "Buffer"
 space
 
+read_file entitymanager "EntityManager"
+space
+
+read_file ecscontroller "ECSController"
+space
+
 read_file context_decl "Context"
 space
 
@@ -267,6 +279,8 @@ space
 
 read_file settings_decl "SettingsManager"
 space
+
+read_file signature
 
 proj=windows
 
