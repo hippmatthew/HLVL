@@ -6,6 +6,7 @@ set(SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/test_classes.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/end_to_end.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/u_allocator.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/u_componentmanager.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/u_context.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/u_controller.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/u_entitymanager.cpp

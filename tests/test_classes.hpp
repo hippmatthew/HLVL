@@ -2,7 +2,6 @@
 #define physp_tests_test_classes_hpp
 
 #include "physp/physp.hpp"
-#include "physp/physp_decl.hpp"
 
 class Test1 : public pp::Settings
 {

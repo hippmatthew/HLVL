@@ -22,7 +22,7 @@ if (PHYSP_BUILD_TESTS)
 endif()
 
 project(PhysicsPlus
-  VERSION 0.50.0
+  VERSION 0.56.0
   LANGUAGES CXX
 )
 

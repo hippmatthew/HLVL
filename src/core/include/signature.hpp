@@ -22,6 +22,7 @@ class Signature
 
     Signature operator | (const Signature&);
     Signature operator & (const Signature&);
+    Signature operator ~ ();
 
     bool operator == (const Signature&);
 

@@ -3,10 +3,13 @@ project(PhysicsPlus::Core)
 set(HEADERS
   ${CMAKE_CURRENT_SOURCE_DIR}/include/allocation.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/allocator.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/components.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/components_decl.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/context.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/context_decl.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/device.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/ecscontroller.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/ecscontroller_decl.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/entitymanager.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/interface.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/interface_decl.hpp

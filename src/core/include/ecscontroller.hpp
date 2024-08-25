@@ -1,28 +1,49 @@
 #ifndef physp_core_ecscontroller_hpp
 #define physp_core_ecscontroller_hpp
 
-#include "src/core/include/entitymanager.hpp"
+#include "src/core/include/ecscontroller_decl.hpp"
 
 namespace pp
 {
 
-class ECSController
+template <typename T>
+T& ECSController::component(Entity entity)
 {
-  public:
-    ECSController() = default;
-    ECSController(ECSController&) = delete;
-    ECSController(ECSController&&) = delete;
+  return componentManager.component<T>(entity);
+}
 
-    ~ECSController() = default;
+template <typename... Tps>
+void ECSController::register_components()
+{
+  componentManager.newArrays<Tps...>();
+}
 
-    ECSController& operator = (ECSController&) = delete;
-    ECSController& operator = (ECSController&&) = delete;
+template <typename... Tps>
+void ECSController::unregister_components()
+{
+  componentManager.removeArrays<Tps...>();
+}
 
-    Entity new_entity();
+template <typename... Tps>
+void ECSController::add_components(Entity entity, Tps&... components)
+{
+  componentManager.addDatas(entity, components...);
+  entityManager.signature(entity) |= ( componentManager.signature<Tps>(), ... );
+}
 
-  private:
-    EntityManager entityManager;
-};
+template <typename... Tps>
+void ECSController::add_components(Entity entity, Tps&&... components)
+{
+  componentManager.addDatas(entity, components...);
+  entityManager.signature(entity) |= ( componentManager.signature<Tps>(), ... );
+}
+
+template <typename... Tps>
+void ECSController::remove_components(Entity entity)
+{
+  componentManager.removeDatas<Tps...>(entity);
+  entityManager.signature(entity) &= ( ~componentManager.signature<Tps>(), ... );
+}
 
 } // namespace pp
 

@@ -130,10 +130,13 @@ forward_declarations()
   input "class Allocation;"
   input "class Allocator;"
   input "class Buffer;"
+  input "class ComponentManager;"
   input "class Context;"
   input "class Device;"
   input "class ECSController;"
   input "class EntityManager;"
+  input "class IComponentArray;"
+  input "template<typename T> class ComponentArray;"
   input "class IInterface;"
   input "template<typename T> class Interface;"
   input "class IResource;"
@@ -244,13 +247,22 @@ space
 read_file entitymanager "EntityManager"
 space
 
-read_file ecscontroller "ECSController"
+read_file components_decl "ComponentManager"
+space
+
+read_file ecscontroller_decl "ECSController"
 space
 
 read_file context_decl "Context"
 space
 
 read_file device
+space
+
+read_file components_decl "IComponentArray"
+space
+
+read_file components_decl "ComponentArray" 1
 space
 
 read_file interface_decl "IInterface"
@@ -324,7 +336,13 @@ input "namespace pp"
 input "{"
 space
 
+read_numbered components 11 172
+space
+
 read_numbered context 9 18
+space
+
+read_numbered ecscontroller 9 46
 space
 
 read_numbered interface 9 67

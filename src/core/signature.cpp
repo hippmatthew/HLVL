@@ -39,6 +39,11 @@ Signature Signature::operator & (const Signature & signature)
   return Signature(bits & signature.bits);
 }
 
+Signature Signature::operator ~ ()
+{
+  return Signature(~bits);
+}
+
 bool Signature::operator == (const Signature& signature)
 {
   return bits == signature.bits;
