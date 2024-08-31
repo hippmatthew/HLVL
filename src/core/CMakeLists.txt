@@ -20,6 +20,8 @@ set(HEADERS
   ${CMAKE_CURRENT_SOURCE_DIR}/include/settings_decl.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/signature.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/stagingbuffer.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/systems.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/systems_decl.hpp
 )
 
 set(SOURCES

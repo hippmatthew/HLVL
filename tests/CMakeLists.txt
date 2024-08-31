@@ -11,6 +11,7 @@ set(SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/u_controller.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/u_entitymanager.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/u_settings.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/u_systemmanager.cpp
 )
 
 add_executable(test ${SOURCES})

@@ -19,6 +19,8 @@ TEST_CASE( "run_test", "[endtoend]" )
   unsigned long iterations = 1000;
   KeyTest keyTest;
 
+  unsigned long finalvalue1 = 0, finalvalue2 = 0;
+
   bool success = true;
   try
   {
@@ -28,11 +30,31 @@ TEST_CASE( "run_test", "[endtoend]" )
       .add_keybind({ pp::Key::a, pp::Key::b }, KeyTest::pressAB);
 
     auto& allocator = context.allocator();
+    auto& controller = context.ecs_controller();
 
-    allocator.new_allocation({ pp::Locality::device, { &counter }});
+    controller.register_components<pp::Resource<Test1>, int>()
+              .register_systems<System1, System2>();
+
+    controller.require_components<System1, pp::Resource<Test1>>()
+              .require_components<System2, pp::Resource<Test1>, int>();
+
+    auto entity1 = controller.new_entity();
+    auto entity2 = controller.new_entity();
+
+    controller.add_components(entity1, pp::Resource<Test1>(Test1()))
+              .add_components(entity2, pp::Resource<Test1>(Test1()), 2);
+
+    controller.add_to_system<System1>({ entity1, entity2 })
+              .add_to_system<System2>({ entity2 });
+
+    allocator.new_allocation({ pp::Locality::device, { &counter } });
+    allocator.new_allocation({ pp::Locality::host, { &controller.component<pp::Resource<Test1>>(entity1) } });
+    allocator.new_allocation({ pp::Locality::device, { &controller.component<pp::Resource<Test1>>(entity2) } });
+
+    auto system1 = controller.system<System1>();
+    auto system2 = controller.system<System2>();
 
     unsigned int iteration = 0;
-
     pp_loop_start
 
     counter = *counter + 1;
@@ -52,11 +74,17 @@ TEST_CASE( "run_test", "[endtoend]" )
     else if (iteration == 669)
       pp::windows::GLFW::key_callback(pp::windows::GLFW::p_window, GLFW_KEY_A, 0, GLFW_RELEASE, 0);
 
+    system1->run();
+    system2->run();
+
     ++iteration;
 
-    pp_loop_end( (iteration == iterations) );
+    pp_loop_end( iteration == iterations );
 
     allocator.wait();
+
+    finalvalue1 = (*controller.component<pp::Resource<Test1>>(entity1)).a;
+    finalvalue2 = (*controller.component<pp::Resource<Test1>>(entity2)).a;
   }
   catch( std::exception& e)
   {
@@ -69,11 +97,13 @@ TEST_CASE( "run_test", "[endtoend]" )
     success = false;
   }
 
-  CHECK( success );
+  REQUIRE( success );
   CHECK( *counter == iterations );
   CHECK( keyTest.a == true );
   CHECK( keyTest.both == true );
   CHECK( pp::windows::GLFW::resized == true );
+  CHECK( finalvalue1 == 1000 );
+  CHECK( finalvalue2 == 1022 );
 }
 
 int main()

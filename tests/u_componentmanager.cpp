@@ -12,6 +12,7 @@ TEST_CASE( "new_array", "[unit][componentmanager]" )
   try
   {
     manager.newArrays<Test1, Test2>();
+    manager.signature<Test1>();
   }
   catch (std::exception& e)
   {
@@ -126,4 +127,31 @@ TEST_CASE( "component", "[unit][componentmanager]" )
 
   REQUIRE( success );
   CHECK( data.a == 0 );
+}
+
+TEST_CASE( "component_signature", "[unit][componentmanager]" )
+{
+  pp::ComponentManager manager;
+  manager.newArrays<Test1>();
+
+  pp::Signature signature;
+
+  bool success = true;
+  try
+  {
+    signature = manager.signature<Test1>();
+  }
+  catch (std::exception& e)
+  {
+    std::cout << "component_signature: " << e.what() << '\n';
+    success = false;
+  }
+  catch( ... )
+  {
+    std::cout << "component_signature: unknown\n";
+    success = false;
+  }
+
+  REQUIRE( success );
+  CHECK( signature == pp::Signature(0x1ul) );
 }

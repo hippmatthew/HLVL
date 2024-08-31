@@ -20,11 +20,12 @@ class Signature
     Signature& operator |= (const Signature&);
     Signature& operator &= (const Signature&);
 
-    Signature operator | (const Signature&);
-    Signature operator & (const Signature&);
-    Signature operator ~ ();
+    Signature operator | (const Signature&) const;
+    Signature operator & (const Signature&) const;
+    Signature operator ~ () const;
 
-    bool operator == (const Signature&);
+    bool operator == (const Signature&) const;
+    bool operator != (const Signature&) const;
 
   private:
     unsigned long bits = 0x0ul;

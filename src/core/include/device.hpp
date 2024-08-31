@@ -47,6 +47,8 @@ class Device
         QueueFamily& operator = (QueueFamily&&) = delete;
 
       private:
+        std::mutex mutex;
+
         const unsigned long qf_index;
         const unsigned int qf_types;
         vk::raii::Queue qf_queue = nullptr;
@@ -90,6 +92,8 @@ class Device
     bool hasFamily(FamilyType) const;
     unsigned long familyIndex(FamilyType) const;
     const vk::raii::Queue& queue(FamilyType) const;
+    void lockQueue(FamilyType) const;
+    void unlockQueue(FamilyType) const;
 
   private:
     void getGPU(const vk::raii::Instance&, const vk::raii::SurfaceKHR&);

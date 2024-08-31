@@ -6,7 +6,14 @@
 class Test1 : public pp::Settings
 {
   public:
+    Test1() = default;
+    Test1(const Test1&) = default;
+    Test1(Test1&&) = default;
+
     void reset_to_default() { a = 0; }
+
+    Test1& operator = (const Test1&) = default;
+    Test1& operator = (Test1&&) = default;
 
   public:
     int a = 0;
@@ -44,6 +51,39 @@ class KeyTest
 struct Vertex
 {
   unsigned int x, y, z;
+};
+
+class System1 : public pp::ISystem
+{
+  public:
+    void run()
+    {
+      for (const auto& entity : entities)
+      {
+        auto& resource = component<pp::Resource<Test1>>(entity);
+
+        Test1 data = *resource;
+        data.a += 1;
+        resource = data;
+      }
+    }
+};
+
+class System2 : public pp::ISystem
+{
+  public:
+    void run()
+    {
+      for (const auto& entity : entities)
+      {
+        auto& resource = component<pp::Resource<Test1>>(entity);
+        auto& multiplier = component<int>(entity);
+
+        Test1 data = *resource;
+        data.a = (data.a * multiplier) % 1024;
+        resource = data;
+      }
+    }
 };
 
 inline void reset_settings()

@@ -83,11 +83,13 @@ void Allocator::deviceUpdate(const AllocationIndex& index, void * data, const st
       stagingBuffers.pop();
 
       mutex.unlock();
+      p_device->lockQueue(stagingBuffer.queueFamily);
 
       stagingBuffer.allocate(*p_device, buffer.p_resource->size, data);
       stagingBuffer.transfer(*p_device, buffer.vk_buffer);
       stagingBuffer.reset();
 
+      p_device->unlockQueue(stagingBuffer.queueFamily);
       data_mutex.unlock();
       buffer.mutex.unlock();
       mutex.lock();

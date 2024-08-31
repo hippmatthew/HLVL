@@ -15,6 +15,22 @@ Resource<T>::Resource(T d, ResourceType t, bool s) : IResource(sizeof(T))
 }
 
 template <typename T>
+Resource<T>::Resource(const Resource<T>& resource) : IResource(sizeof(T))
+{
+  resource_type = resource.resource_type;
+  is_shared = resource.is_shared;
+  data = resource.data;
+}
+
+template <typename T>
+Resource<T>::Resource(Resource<T>&& resource) : IResource(sizeof(T))
+{
+  resource_type = std::move(resource.resource_type);
+  is_shared = std::move(resource.is_shared);
+  data = std::move(resource.data);
+}
+
+template <typename T>
 Resource<T>& Resource<T>::operator = (const Resource<T>& resource)
 {
   if (this == &resource) return *this;

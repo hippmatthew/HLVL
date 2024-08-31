@@ -45,8 +45,8 @@ class Resource : public IResource
 {
   public:
     Resource(T, ResourceType t = uniform, bool s = false);
-    Resource(const Resource&) = default;
-    Resource(Resource&&) = default;
+    Resource(const Resource&);
+    Resource(Resource&&);
 
     ~Resource() = default;
 

@@ -147,7 +147,7 @@ template <typename T>
 void ComponentManager::removeArray()
 {
   if (!isRegistered<T>())
-    throw std::out_of_range("pp::ComponentManager: attempted to remove component array ofnon-registered component type");
+    throw std::out_of_range("pp::ComponentManager: attempted to remove component array of non-registered component type");
 
   componentMap.erase(typeid(T).name());
   signatureMap.erase(typeid(T).name());

@@ -29,24 +29,29 @@ Signature& Signature::operator &= (const Signature& signature)
   return *this;
 }
 
-Signature Signature::operator | (const Signature& signature)
+Signature Signature::operator | (const Signature& signature) const
 {
   return Signature(bits | signature.bits);
 }
 
-Signature Signature::operator & (const Signature & signature)
+Signature Signature::operator & (const Signature & signature) const
 {
   return Signature(bits & signature.bits);
 }
 
-Signature Signature::operator ~ ()
+Signature Signature::operator ~ () const
 {
   return Signature(~bits);
 }
 
-bool Signature::operator == (const Signature& signature)
+bool Signature::operator == (const Signature& signature) const
 {
   return bits == signature.bits;
+}
+
+bool Signature::operator != (const Signature& signature) const
+{
+  return bits != signature.bits;
 }
 
 } // namespace pp

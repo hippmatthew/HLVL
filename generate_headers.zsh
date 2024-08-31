@@ -8,7 +8,7 @@ time=$(date "+%m-%d-%Y %H:%M:%S")
 system=$(uname -s)
 start_time=$(date +%s)
 
-deps=(future map memory mutex queue stdexcept string type_traits vector)
+deps=(future map memory mutex queue set stdexcept string type_traits vector)
 file=physp_decl
 proj=core
 
@@ -141,6 +141,7 @@ forward_declarations()
   input "template<typename T> class Interface;"
   input "class IResource;"
   input "template<typename T> class Resource;"
+  input "class ISystem;"
   input "class IWindow;"
   input "class Settings;"
   input "class GeneralSettings;"
@@ -148,6 +149,7 @@ forward_declarations()
   input "class SettingsManager;"
   input "class Signature;"
   input "class StagingBuffer;"
+  input "class SystemManager;"
   space
 
   input "namespace windows"
@@ -250,6 +252,9 @@ space
 read_file components_decl "ComponentManager"
 space
 
+read_file systems_decl "SystemManager"
+space
+
 read_file ecscontroller_decl "ECSController"
 space
 
@@ -275,6 +280,9 @@ read_file resource_decl "IResource"
 space
 
 read_file resource_decl "Resource" 1
+space
+
+read_file systems_decl "ISystem"
 space
 
 read_file iwindow "IWindow"
@@ -342,16 +350,19 @@ space
 read_numbered context 9 18
 space
 
-read_numbered ecscontroller 9 46
+read_numbered ecscontroller 11 107
 space
 
 read_numbered interface 9 67
 space
 
-read_numbered resource 9 77
+read_numbered resource 9 93
 space
 
 read_numbered settings 12 95
+space
+
+read_numbered systems 13 105
 space
 
 input "} // namespace pp"

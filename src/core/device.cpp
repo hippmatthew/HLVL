@@ -169,6 +169,16 @@ const vk::raii::Queue& Device::queue(FamilyType type) const
   return (queueFamilies->familyMap[std::to_string(type)])->qf_queue;
 }
 
+void Device::lockQueue(FamilyType type) const
+{
+  queueFamilies->familyMap.at(std::to_string(type))->mutex.lock();
+}
+
+void Device::unlockQueue(FamilyType type) const
+{
+  queueFamilies->familyMap.at(std::to_string(type))->mutex.unlock();
+}
+
 void Device::getGPU(const vk::raii::Instance& vk_instance, const vk::raii::SurfaceKHR& vk_surface)
 {
   std::queue<vk::raii::PhysicalDevice> discreteGPUs, integratedGPUs, virtualGPUs;
