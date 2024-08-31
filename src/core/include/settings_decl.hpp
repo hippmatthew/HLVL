@@ -19,7 +19,7 @@
   ((patch))         \
 )
 #define pp_vulkan_version   VK_MAKE_API_VERSION(0, 1, 3, 290)
-#define pp_engine_version   pp_make_version(0, 56, 0)
+#define pp_engine_version   pp_make_version(0, 62, 1)
 
 #define pp_settings_manager pp::SettingsManager::instance()
 #define pp_general_settings pp_settings_manager.settings<pp::GeneralSettings>()
