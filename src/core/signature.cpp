@@ -1,6 +1,6 @@
-#include "src/core/include/signature.hpp"
+#include "include/signature.hpp"
 
-namespace pp
+namespace hlvl
 {
 
 Signature::Signature(unsigned long b) : bits(b) {}
@@ -54,4 +54,4 @@ bool Signature::operator != (const Signature& signature) const
   return bits != signature.bits;
 }
 
-} // namespace pp
+} // namespace hlvl

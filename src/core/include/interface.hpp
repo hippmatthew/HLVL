@@ -1,9 +1,8 @@
-#ifndef physp_core_interface_hpp
-#define physp_core_interface_hpp
+#pragma once
 
-#include "src/core/include/interface_decl.hpp"
+#include "interface_decl.hpp"
 
-namespace pp
+namespace hlvl
 {
 
 template <typename T>
@@ -66,6 +65,4 @@ void Interface<T>::load(std::shared_ptr<Device> p_device)
   window.load(p_device);
 }
 
-} // namespace pp
-
-#endif // physp_core_interface_hpp
+} // namespace hlvl

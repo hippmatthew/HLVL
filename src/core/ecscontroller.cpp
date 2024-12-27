@@ -1,6 +1,6 @@
-#include "src/core/include/ecscontroller.hpp"
+#include "include/ecscontroller.hpp"
 
-namespace pp
+namespace hlvl
 {
 
 Entity ECSController::new_entity()
@@ -8,4 +8,4 @@ Entity ECSController::new_entity()
   return entityManager.newEntity();
 }
 
-} // namespace pp
+} // namespace hlvl

@@ -1,25 +1,25 @@
-#include "src/core/include/device.hpp"
-#include "src/core/include/settings_decl.hpp"
+#include "include/device.hpp"
+#include "include/settings_decl.hpp"
 
 #include <queue>
 
 #define VK_PORTABILITY_SUBSET_NAME "VK_KHR_portability_subset"
 
-#define PHYSP_GRAPHICS_QUEUE_BIT        0x1000000u
-#define PHYSP_PRESENT_QUEUE_BIT         0x0100000u
-#define PHYSP_SYNC_COMPUTE_QUEUE_BIT    0x0010000u
-#define PHYSP_ASYNC_COMPUTE_QUEUE_BIT   0x0001000u
-#define PHYSP_SYNC_TRANSFER_QUEUE_BIT   0x0000100u
-#define PHYSP_ASYNC_TRANSFER_QUEUE_BIT  0x0000010u
-#define PHYSP_SPARSE_QUEUE_BIT          0x0000001u
+#define HLVL_GRAPHICS_QUEUE_BIT         0x1000000u
+#define HLVL_PRESENT_QUEUE_BIT          0x0100000u
+#define HLVL_SYNC_COMPUTE_QUEUE_BIT     0x0010000u
+#define HLVL_ASYNC_COMPUTE_QUEUE_BIT    0x0001000u
+#define HLVL_SYNC_TRANSFER_QUEUE_BIT    0x0000100u
+#define HLVL_ASYNC_TRANSFER_QUEUE_BIT   0x0000010u
+#define HLVL_SPARSE_QUEUE_BIT           0x0000001u
 
-#define PHYSP_ALL_FAMILY        ( PHYSP_GRAPHICS_QUEUE_BIT | PHYSP_PRESENT_QUEUE_BIT | PHYSP_SYNC_COMPUTE_QUEUE_BIT | PHYSP_SYNC_TRANSFER_QUEUE_BIT )
-#define PHYSP_COMPUTE_FAMILY    ( PHYSP_ASYNC_COMPUTE_QUEUE_BIT )
-#define PHYSP_TRANSFER_FAMILY   ( PHYSP_ASYNC_TRANSFER_QUEUE_BIT )
-#define PHYSP_ASYNC_FAMILY      ( PHYSP_ASYNC_COMPUTE_QUEUE_BIT | PHYSP_ASYNC_TRANSFER_QUEUE_BIT )
-#define PHYSP_SPARSE_FAMILY     ( PHYSP_SPARSE_QUEUE_BIT )
+#define HLVL_ALL_FAMILY         ( HLVL_GRAPHICS_QUEUE_BIT | HLVL_PRESENT_QUEUE_BIT | HLVL_SYNC_COMPUTE_QUEUE_BIT | HLVL_SYNC_TRANSFER_QUEUE_BIT )
+#define HLVL_COMPUTE_FAMILY     ( HLVL_ASYNC_COMPUTE_QUEUE_BIT )
+#define HLVL_TRANSFER_FAMILY    ( HLVL_ASYNC_TRANSFER_QUEUE_BIT )
+#define HLVL_ASYNC_FAMILY       ( HLVL_ASYNC_COMPUTE_QUEUE_BIT | HLVL_ASYNC_TRANSFER_QUEUE_BIT )
+#define HLVL_SPARSE_FAMILY      ( HLVL_SPARSE_QUEUE_BIT )
 
-namespace pp
+namespace hlvl
 {
 
 Device::QueueFamily::QueueFamily(unsigned long index, unsigned int types)
@@ -36,32 +36,32 @@ Device::QueueFamilies::QueueFamilies(const vk::raii::PhysicalDevice& vk_physical
     unsigned int types = 0x0000000u;
 
     bool surfaceSupport = true;
-    if (pp_general_settings.draw_window)
+    if (hlvl_general_settings.draw_window)
       surfaceSupport = vk_physicalDevice.getSurfaceSupportKHR(index, *vk_surface);
 
     if (family.queueFlags & vk::QueueFlagBits::eGraphics && surfaceSupport)
-      types |= PHYSP_GRAPHICS_QUEUE_BIT | PHYSP_PRESENT_QUEUE_BIT;
+      types |= HLVL_GRAPHICS_QUEUE_BIT | HLVL_PRESENT_QUEUE_BIT;
 
     if (family.queueFlags & vk::QueueFlagBits::eCompute)
     {
-      unsigned int type = PHYSP_SYNC_COMPUTE_QUEUE_BIT;
-      if (!(types & PHYSP_GRAPHICS_QUEUE_BIT))
-        type = PHYSP_ASYNC_COMPUTE_QUEUE_BIT;
+      unsigned int type = HLVL_SYNC_COMPUTE_QUEUE_BIT;
+      if (!(types & HLVL_GRAPHICS_QUEUE_BIT))
+        type = HLVL_ASYNC_COMPUTE_QUEUE_BIT;
 
       types |= type;
     }
 
     if (family.queueFlags & vk::QueueFlagBits::eTransfer)
     {
-      unsigned int type = PHYSP_SYNC_TRANSFER_QUEUE_BIT;
-      if (!(types & PHYSP_GRAPHICS_QUEUE_BIT))
-        type = PHYSP_ASYNC_TRANSFER_QUEUE_BIT;
+      unsigned int type = HLVL_SYNC_TRANSFER_QUEUE_BIT;
+      if (!(types & HLVL_GRAPHICS_QUEUE_BIT))
+        type = HLVL_ASYNC_TRANSFER_QUEUE_BIT;
 
       types |= type;
     }
 
     if (family.queueFlags & vk::QueueFlagBits::eSparseBinding)
-      types |= PHYSP_SPARSE_QUEUE_BIT;
+      types |= HLVL_SPARSE_QUEUE_BIT;
 
     switch (to_family(types))
     {
@@ -201,7 +201,7 @@ void Device::getGPU(const vk::raii::Instance& vk_instance, const vk::raii::Surfa
     if (!hasAllFamily) continue;
 
     bool supportsExtensions = true;
-    for (const char * extension : pp_general_settings.vk_device_extensions)
+    for (const char * extension : hlvl_general_settings.vk_device_extensions)
     {
       supportsExtensions = false;
       for (const auto& property : GPU.enumerateDeviceExtensionProperties())
@@ -218,7 +218,7 @@ void Device::getGPU(const vk::raii::Instance& vk_instance, const vk::raii::Surfa
     if (!supportsExtensions) continue;
 
 
-    if (pp_general_settings.draw_window)
+    if (hlvl_general_settings.draw_window)
     {
       if (GPU.getSurfaceFormatsKHR(*vk_surface).empty()) continue;
       if (GPU.getSurfacePresentModesKHR(*vk_surface).empty()) continue;
@@ -244,7 +244,7 @@ void Device::getGPU(const vk::raii::Instance& vk_instance, const vk::raii::Surfa
   else if (!virtualGPUs.empty())
     vk_physicalDevice = virtualGPUs.front();
   else
-    throw std::runtime_error("pp::Device: no suitable GPU found");
+    throw std::runtime_error("hlvl::Device: no suitable GPU found");
 
   queueFamilies = std::make_unique<QueueFamilies>(vk_physicalDevice, vk_surface);
 
@@ -253,13 +253,13 @@ void Device::getGPU(const vk::raii::Instance& vk_instance, const vk::raii::Surfa
   {
     if (std::string(extension.extensionName) == VK_PORTABILITY_SUBSET_NAME)
     {
-      pp_general_settings.add_device_extensions({ VK_PORTABILITY_SUBSET_NAME });
+      hlvl_general_settings.add_device_extensions({ VK_PORTABILITY_SUBSET_NAME });
       portability = true;
       break;
     }
   }
-  if (portability ^ pp_general_settings.portability_enabled)
-    pp_general_settings.portability_enabled = !pp_general_settings.portability_enabled;
+  if (portability ^ hlvl_general_settings.portability_enabled)
+    hlvl_general_settings.portability_enabled = !hlvl_general_settings.portability_enabled;
 }
 
 void Device::createDevice(const void * p_next)
@@ -284,9 +284,9 @@ void Device::createDevice(const void * p_next)
     .pNext                    = p_next,
     .queueCreateInfoCount     = static_cast<unsigned int>(queueCreateInfos.size()),
     .pQueueCreateInfos        = queueCreateInfos.data(),
-    .enabledExtensionCount    = static_cast<unsigned int>(pp_general_settings.vk_device_extensions.size()),
-    .ppEnabledExtensionNames  = pp_general_settings.vk_device_extensions.data(),
-    .pEnabledFeatures         = &pp_general_settings.vk_physical_device_features
+    .enabledExtensionCount    = static_cast<unsigned int>(hlvl_general_settings.vk_device_extensions.size()),
+    .ppEnabledExtensionNames  = hlvl_general_settings.vk_device_extensions.data(),
+    .pEnabledFeatures         = &hlvl_general_settings.vk_physical_device_features
   };
 
   vk_device = vk_physicalDevice.createDevice(ci_device);
@@ -297,57 +297,57 @@ unsigned int to_bits(FamilyType type)
   switch (type)
   {
     case All:
-      return PHYSP_ALL_FAMILY;
+      return HLVL_ALL_FAMILY;
     case Compute:
-      return PHYSP_COMPUTE_FAMILY;
+      return HLVL_COMPUTE_FAMILY;
     case Transfer:
-      return PHYSP_TRANSFER_FAMILY;
+      return HLVL_TRANSFER_FAMILY;
     case Async:
-      return PHYSP_ASYNC_FAMILY;
+      return HLVL_ASYNC_FAMILY;
     case Sparse:
-      return PHYSP_SPARSE_FAMILY;
+      return HLVL_SPARSE_FAMILY;
   }
 
-  throw std::runtime_error("error @ pp::to_bits() : unknown pp::FamilyType");
+  throw std::runtime_error("hlvl::to_bits: unknown hlvl::FamilyType");
 }
 
 FamilyType to_family(unsigned int bits)
 {
   switch (bits)
   {
-    case PHYSP_ALL_FAMILY:
+    case HLVL_ALL_FAMILY:
       return FamilyType::All;
-    case PHYSP_COMPUTE_FAMILY:
+    case HLVL_COMPUTE_FAMILY:
       return FamilyType::Compute;
-    case PHYSP_TRANSFER_FAMILY:
+    case HLVL_TRANSFER_FAMILY:
       return FamilyType::Transfer;
-    case PHYSP_ASYNC_FAMILY:
+    case HLVL_ASYNC_FAMILY:
       return FamilyType::Async;
-    case PHYSP_SPARSE_FAMILY:
+    case HLVL_SPARSE_FAMILY:
       return FamilyType::Sparse;
   }
 
-  throw std::runtime_error("error @ pp::to_family() : uint has no corresponding pp::FamilyType");
+  throw std::runtime_error("hlvl::to_family() : uint has no corresponding hlvl::FamilyType");
 }
 
-} // namespace vecs
+} // namespace hlvl
 
 namespace std
 {
 
-std::string to_string(pp::FamilyType type)
+string to_string(hlvl::FamilyType type)
 {
   switch (type)
   {
-    case pp::FamilyType::All:
+    case hlvl::FamilyType::All:
       return "All";
-    case pp::FamilyType::Compute:
+    case hlvl::FamilyType::Compute:
       return "Compute";
-    case pp::FamilyType::Transfer:
+    case hlvl::FamilyType::Transfer:
       return "Transfer";
-    case pp::FamilyType::Async:
+    case hlvl::FamilyType::Async:
       return "Async";
-    case pp::FamilyType::Sparse:
+    case hlvl::FamilyType::Sparse:
       return "Sparse";
   }
 }

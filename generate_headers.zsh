@@ -9,7 +9,7 @@ system=$(uname -s)
 start_time=$(date +%s)
 
 deps=(future map memory mutex queue set stdexcept string type_traits vector)
-file=physp_decl
+file=hlvl_decl
 proj=core
 
 log()
@@ -21,7 +21,7 @@ log()
 
 clear()
 {
-  echo -n > $build_dir/include/physp/$file.hpp
+  echo -n > $build_dir/include/hlvl/$file.hpp
 }
 
 input()
@@ -30,9 +30,9 @@ input()
   local has_newline=${2:-1}
 
   if (( has_newline == 1 )); then
-    echo $msg >> $build_dir/include/physp/$file.hpp
+    echo $msg >> $build_dir/include/hlvl/$file.hpp
   else
-    echo -n $msg >> $build_dir/include/physp/$file.hpp
+    echo -n $msg >> $build_dir/include/hlvl/$file.hpp
   fi
 }
 
@@ -43,7 +43,7 @@ space()
 
 header()
 {
-  input "// physp::${proj}::${file}_hpp generated on ${time} with system ${system}"
+  input "// hlvl::${proj}::${file}_hpp generated on ${time} with system ${system}"
 }
 
 read_file()
@@ -111,18 +111,18 @@ includes()
 
 defines()
 {
-  input "#define pp_make_version(major, minor, patch) (uint32_t)( \\"
+  input "#define hlvl_make_version(major, minor, patch) (uint32_t)( \\"
   input "\t( (major) << 16 )\t| \\"
   input "\t( (minor) << 8 )\t| \\"
   input "\t(patch)\t\t\t\t\t\t\\"
   input ")"
-  input "#define pp_vulkan_version VK_MAKE_API_VERSION(VK_API_VERSION_1_3, 1, 3, 290)"
-  input "#define pp_engine_version pp_make_version(0, 0, 0)"
+  input "#define hlvl_vulkan_version VK_MAKE_API_VERSION(VK_API_VERSION_1_3, 1, 3, 290)"
+  input "#define hlvl_engine_version hlvl_make_version(0, 0, 0)"
   space
 
-  input "#define pp_settings_manager pp::SettingsManager::instance()"
-  input "#define pp_general_settings pp_settings_manager.settings<pp::GeneralSettings>()"
-  input "#define pp_window_settings  pp_settings_manager.settings<pp::WindowSettings>()"
+  input "#define hlvl_settings_manager hlvl::SettingsManager::instance()"
+  input "#define hlvl_general_settings hlvl_settings_manager.settings<hlvl::GeneralSettings>()"
+  input "#define hlvl_window_settings  hlvl_settings_manager.settings<hlvl::WindowSettings>()"
 }
 
 forward_declarations()
@@ -159,30 +159,30 @@ forward_declarations()
   input "class GLFW;"
   space
 
-  input "} // namespace pp::windows"
+  input "} // namespace hlvl::windows"
 }
 
 mainloop_macros()
 {
-  input "#define pp_loop_start \\"
+  input "#define hlvl_loop_start \\"
   input "\tmainloop: \\"
-  input "\t\tpp_general_settings.p_context->poll_events();"
+  input "\t\thlvl_general_settings.p_context->poll_events();"
   space
 
-  input "#define pp_loop_end(condition) \\"
-  input "\tif (!(pp_general_settings.p_context->should_close() || condition)) \\"
+  input "#define hlvl_loop_end(condition) \\"
+  input "\tif (!(hlvl_general_settings.p_context->should_close() || condition)) \\"
   input "\t\tgoto mainloop;"
 }
 
-log "Generating Physics+ version ${version} headers on system ${system}"
+log "Generating HLVL version ${version} headers on system ${system}"
 
-if [[ ! -d "${build_dir}/include/physp" ]]; then
-  mkdir -p $build_dir/include/physp
-  log "made directory ${build_dir}/include/physp"
+if [[ ! -d "${build_dir}/include/hlvl" ]]; then
+  mkdir -p $build_dir/include/hlvl
+  log "made directory ${build_dir}/include/hlvl"
 fi
 
 #############################
-# physp_decl.hpp generation #
+# hlvl_decl.hpp generation #
 #############################
 log "generating ${file}.hpp"
 
@@ -190,8 +190,7 @@ clear
 header
 space
 
-input "#ifndef physp_decl_hpp"
-input "#define physp_decl_hpp"
+input "#pragma once"
 space
 
 includes
@@ -200,7 +199,7 @@ space
 defines
 space
 
-input "namespace pp"
+input "namespace hlvl"
 input "{"
 space
 
@@ -211,27 +210,27 @@ input "using Entity = unsigned long;"
 space
 
 # enum FamilyType
-read_numbered device 11 18
+read_numbered device 10 17
 space
 
 # enum Key
-read_numbered iwindow 17 84
+read_numbered iwindow 16 83
 space
 
 # enum Locality
-read_numbered allocation 12 16
+read_numbered allocation 11 15
 space
 
 # enum QueueType
-read_numbered device 20 29
+read_numbered device 19 28
 space
 
 # enum ResourceType
-read_numbered resource_decl 9 15
+read_numbered resource_decl 8 14
 space
 
 # struct ResourcePool
-read_numbered allocation 18 22
+read_numbered allocation 17 21
 space
 
 read_file allocation
@@ -313,16 +312,13 @@ read_file glfw "GLFW : public IWindow"
 
 space
 
-input "} // namespace pp::windows"
-input "} // namespace pp"
-space
-
-input "#endif // physp_decl_hpp" 0
+input "} // namespace hlvl::windows"
+input "} // namespace hlvl" 0
 
 ########################
-# physp.hpp generation #
+# hlvl.hpp generation #
 ########################
-file=physp
+file=hlvl
 proj=core
 
 log "Generating ${file}.hpp"
@@ -331,45 +327,41 @@ clear
 header
 space
 
-input "#ifndef physp_hpp"
-input "#define physp_hpp"
+input "#pragma once"
 space
 
-input "#include \"./physp_decl.hpp\""
+input "#include \"hlvl_decl.hpp\""
 space
 
 mainloop_macros
+space
 
-input "namespace pp"
+input "namespace hlvl"
 input "{"
 space
 
-read_numbered components 11 172
+read_numbered components 10 171
 space
 
-read_numbered context 9 18
+read_numbered context 8 17
 space
 
-read_numbered ecscontroller 11 107
+read_numbered ecscontroller 10 106
 space
 
-read_numbered interface 9 67
+read_numbered interface 8 66
 space
 
-read_numbered resource 9 93
+read_numbered resource 8 92
 space
 
-read_numbered settings 12 95
+read_numbered settings 11 94
 space
 
-read_numbered systems 13 105
+read_numbered systems 12 104
 space
 
-input "} // namespace pp"
-space
-
-input "#endif // ${file}_hpp" 0
+input "} // namespace hlvl" 0
 
 end_time=$(date +%s)
-
 log "done in $(echo "$end_time - $start_time" | bc)s."

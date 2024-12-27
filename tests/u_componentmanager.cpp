@@ -1,4 +1,4 @@
-#include "tests/test_classes.hpp"
+#include "test_classes.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -6,7 +6,7 @@
 
 TEST_CASE( "new_array", "[unit][componentmanager]" )
 {
-  pp::ComponentManager manager;
+  hlvl::ComponentManager manager;
 
   bool success = true;
   try
@@ -30,7 +30,7 @@ TEST_CASE( "new_array", "[unit][componentmanager]" )
 
 TEST_CASE( "remove_array", "[unit][componentmanager]" )
 {
-  pp::ComponentManager manager;
+  hlvl::ComponentManager manager;
   manager.newArrays<Test1, Test2>();
 
   bool success = true;
@@ -54,7 +54,7 @@ TEST_CASE( "remove_array", "[unit][componentmanager]" )
 
 TEST_CASE( "add_datas", "[unit][componentmanager]" )
 {
-  pp::ComponentManager manager;
+  hlvl::ComponentManager manager;
   manager.newArrays<Test1, Test2>();
 
   bool success = true;
@@ -78,7 +78,7 @@ TEST_CASE( "add_datas", "[unit][componentmanager]" )
 
 TEST_CASE( "remove_datas", "[unit][componentmanager]" )
 {
-  pp::ComponentManager manager;
+  hlvl::ComponentManager manager;
   manager.newArrays<Test1, Test2>();
   manager.addDatas(0, Test1(), Test2());
 
@@ -103,7 +103,7 @@ TEST_CASE( "remove_datas", "[unit][componentmanager]" )
 
 TEST_CASE( "component", "[unit][componentmanager]" )
 {
-  pp::ComponentManager manager;
+  hlvl::ComponentManager manager;
   manager.newArrays<Test1>();
   manager.addDatas(0, Test1());
 
@@ -131,10 +131,10 @@ TEST_CASE( "component", "[unit][componentmanager]" )
 
 TEST_CASE( "component_signature", "[unit][componentmanager]" )
 {
-  pp::ComponentManager manager;
+  hlvl::ComponentManager manager;
   manager.newArrays<Test1>();
 
-  pp::Signature signature;
+  hlvl::Signature signature;
 
   bool success = true;
   try
@@ -153,5 +153,5 @@ TEST_CASE( "component_signature", "[unit][componentmanager]" )
   }
 
   REQUIRE( success );
-  CHECK( signature == pp::Signature(0x1ul) );
+  CHECK( signature == hlvl::Signature(0x1ul) );
 }

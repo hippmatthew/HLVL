@@ -1,4 +1,4 @@
-project(PhysicsPlus::Core)
+project(HLVL::Core)
 
 set(HEADERS
   ${CMAKE_CURRENT_SOURCE_DIR}/include/allocation.hpp
@@ -38,4 +38,4 @@ set(SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/stagingbuffer.cpp
 )
 
-add_library(physp.core OBJECT ${HEADERS} ${SOURCES})
+add_library(hlvl.core OBJECT ${HEADERS} ${SOURCES})

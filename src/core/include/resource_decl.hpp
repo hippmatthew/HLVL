@@ -1,9 +1,8 @@
-#ifndef physp_core_resource_decl_hpp
-#define physp_core_resource_decl_hpp
+#pragma once
 
-#include "src/core/include/allocator.hpp"
+#include "allocator.hpp"
 
-namespace pp
+namespace hlvl
 {
 
 enum ResourceType
@@ -66,6 +65,4 @@ class Resource : public IResource
     T data;
 };
 
-} // namespace pp
-
-#endif // physp_core_resource_decl_hpp
+} // namespace hlvl

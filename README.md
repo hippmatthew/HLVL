@@ -22,10 +22,11 @@ HLVL is a library built to generalize the use of vulkan and ease the development
 6. If headers were built, they will be located in `<build_directory>/include`
 
 ### Build Options
-- `PHYSP_GENERATE_HEADERS`: Requires zsh. Generates the physp headers with the header generation script
-- `PHYSP_BUILD_TESTS`: Requires Catch2. Compiles tests for the library
+- `HLVL_GENERATE_HEADERS`: Requires zsh. Generates the hlvl headers with the header generation script
+- `HLVL_BUILD_TESTS`: Requires Catch2. Compiles tests for the library
+- `HLVL_DEBUG`: Sets debug flags and optimization level to 0
 
-These options are either `ON` or `OFF` and can be configured when generating the CMake build configuration as such: `cmake <source_directory> -DPHYSP_GENERATE_HEADERS=<ON/OFF> -DPHYSP_BUILD_TESTS=<ON/OFF>`. Make sure to set `-DCMAKE_EXPORT_COMPILE_COMMANDS=ON` if using clangd code intelligence.
+These options are either `ON` or `OFF` and can be configured when generating the CMake build configuration as such: `cmake <source_directory> -DHLVL_GENERATE_HEADERS=<ON/OFF> -DHLVL_BUILD_TESTS=<ON/OFF>`. Make sure to set `-DCMAKE_EXPORT_COMPILE_COMMANDS=ON` if using clangd code intelligence.
 
 > As of right now there is no local install functionality, but there are plans to implement it in the future
 

@@ -1,11 +1,10 @@
-#ifndef physp_core_device_hpp
-#define physp_core_device_hpp
+#pragma once
 
-#include "src/core/include/settings.hpp"
+#include "settings.hpp"
 
 #include <map>
 
-namespace pp
+namespace hlvl
 {
 
 enum FamilyType
@@ -109,13 +108,11 @@ class Device
 FamilyType to_family(unsigned int);
 unsigned int to_bits(FamilyType);
 
-} // namespace pp
+} // namespace hlvl
 
 namespace std
 {
 
-std::string to_string(pp::FamilyType);
+std::string to_string(hlvl::FamilyType);
 
 } // namespace std
-
-#endif // physp_core_device_hpp

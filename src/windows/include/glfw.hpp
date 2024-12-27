@@ -1,17 +1,16 @@
-#ifndef physp_windows_glfw_hpp
-#define physp_windows_glfw_hpp
+#pragma once
 
-#include "src/core/include/iwindow.hpp"
+#include "../../core/include/iwindow.hpp"
 
-#ifndef physp_glfw_include
-#define physp_glfw_include
+#ifndef hlvl_glfw_include
+#define hlvl_glfw_include
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-#endif // physp_glfw_include
+#endif // hlvl_glfw_include
 
-namespace pp::windows
+namespace hlvl::windows
 {
 
 class GLFW : public IWindow
@@ -57,6 +56,4 @@ class GLFW : public IWindow
     std::vector<vk::raii::ImageView> vk_imageViews;
 };
 
-} // namespace pp::windows
-
-#endif // physp_windows_glfw_hpp
+} // namespace hlvl::windows

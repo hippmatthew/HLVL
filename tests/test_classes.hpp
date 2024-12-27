@@ -1,9 +1,8 @@
-#ifndef physp_tests_test_classes_hpp
-#define physp_tests_test_classes_hpp
+#pragma once
 
-#include "physp/physp.hpp"
+#include "hlvl/hlvl.hpp"
 
-class Test1 : public pp::Settings
+class Test1 : public hlvl::Settings
 {
   public:
     Test1() = default;
@@ -19,7 +18,7 @@ class Test1 : public pp::Settings
     int a = 0;
 };
 
-class Test2 : public pp::Settings
+class Test2 : public hlvl::Settings
 {
   public:
     void reset_to_default() { b = 0; };
@@ -53,14 +52,14 @@ struct Vertex
   unsigned int x, y, z;
 };
 
-class System1 : public pp::ISystem
+class System1 : public hlvl::ISystem
 {
   public:
     void run()
     {
       for (const auto& entity : entities)
       {
-        auto& resource = component<pp::Resource<Test1>>(entity);
+        auto& resource = component<hlvl::Resource<Test1>>(entity);
 
         Test1 data = *resource;
         data.a += 1;
@@ -69,14 +68,14 @@ class System1 : public pp::ISystem
     }
 };
 
-class System2 : public pp::ISystem
+class System2 : public hlvl::ISystem
 {
   public:
     void run()
     {
       for (const auto& entity : entities)
       {
-        auto& resource = component<pp::Resource<Test1>>(entity);
+        auto& resource = component<hlvl::Resource<Test1>>(entity);
         auto& multiplier = component<int>(entity);
 
         Test1 data = *resource;
@@ -88,8 +87,6 @@ class System2 : public pp::ISystem
 
 inline void reset_settings()
 {
-  pp_general_settings = pp::GeneralSettings::default_values();
-  pp_window_settings = pp::WindowSettings::default_values();
+  hlvl_general_settings = hlvl::GeneralSettings::default_values();
+  hlvl_window_settings = hlvl::WindowSettings::default_values();
 }
-
-#endif // physp_tests_test_classes_hpp

@@ -1,11 +1,10 @@
-#ifndef physp_core_entitymanager_hpp
-#define physp_core_entitymanager_hpp
+#pragma once
 
-#include "src/core/include/signature.hpp"
+#include "signature.hpp"
 
 #include <map>
 
-namespace pp
+namespace hlvl
 {
 
 using Entity = unsigned long;
@@ -33,6 +32,4 @@ class EntityManager
     Entity nextEntity = 0;
 };
 
-} // namespace pp
-
-#endif // physp_core_entitymanager_hpp
+} // namespace hlvl

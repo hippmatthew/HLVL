@@ -1,9 +1,9 @@
-#include "src/core/include/stagingbuffer.hpp"
-#include "src/core/include/resource_decl.hpp"
+#include "include/stagingbuffer.hpp"
+#include "include/resource_decl.hpp"
 
 #include <limits>
 
-namespace pp
+namespace hlvl
 {
 
 StagingBuffer::StagingBuffer(const Device& device)
@@ -58,7 +58,7 @@ unsigned int StagingBuffer::findIndex(
     ++index;
   }
 
-  throw std::runtime_error("pp::StagingBuffer: could not find suitable memory type index");
+  throw std::runtime_error("hlvl::StagingBuffer: could not find suitable memory type index");
 }
 
 void StagingBuffer::allocate(const Device& device, const std::size_t& size, void * data)
@@ -121,4 +121,4 @@ void StagingBuffer::reset()
   vk_commandBuffer.reset();
 }
 
-} // namespace pp
+} // namespace hlvl

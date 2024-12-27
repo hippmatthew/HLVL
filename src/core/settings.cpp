@@ -1,7 +1,8 @@
-#include "src/core/include/settings.hpp"
+#include "include/settings.hpp"
+
 #include <memory>
 
-namespace pp
+namespace hlvl
 {
 
 SettingsManager * SettingsManager::p_manager = nullptr;
@@ -66,4 +67,4 @@ void SettingsManager::destroy()
   p_manager = nullptr;
 }
 
-} // namespace pp
+} // namespace hlvl

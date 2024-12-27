@@ -1,9 +1,8 @@
-#ifndef physp_core_resource_hpp
-#define physp_core_resource_hpp
+#pragma once
 
-#include "src/core/include/resource_decl.hpp"
+#include "resource_decl.hpp"
 
-namespace pp
+namespace hlvl
 {
 
 template <typename T>
@@ -80,7 +79,7 @@ template <typename T>
 const vk::raii::Buffer& Resource<T>::buffer() const
 {
   if (p_buffer == nullptr)
-    throw std::runtime_error("pp::Resource: tried to access buffer before being allocated");
+    throw std::runtime_error("hlvl::Resource: tried to access buffer before being allocated");
 
   return p_buffer->buffer();
 }
@@ -92,6 +91,4 @@ void Resource<T>::updateAllocation() const
     p_allocator->update_allocation(allocation_index, static_cast<void *>(const_cast<T *>(&data)), &mutex);
 }
 
-} // namespace pp
-
-#endif // physp_core_resource_hpp
+} // namespace hlvl

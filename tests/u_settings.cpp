@@ -1,4 +1,4 @@
-#include "tests/test_classes.hpp"
+#include "test_classes.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -6,10 +6,10 @@ TEST_CASE( "retrieve", "[unit][settings]" )
 {
   SECTION( "valid" )
   {
-    auto&& s = pp_general_settings;
+    auto&& s = hlvl_general_settings;
 
-    CHECK( s.application_name == "PP Application" );
-    CHECK( s.application_version == pp_make_version(1, 0, 0) );
+    CHECK( s.application_name == "HLVL Application" );
+    CHECK( s.application_version == hlvl_make_version(1, 0, 0) );
   }
 
   SECTION( "invalid" )
@@ -19,7 +19,7 @@ TEST_CASE( "retrieve", "[unit][settings]" )
 
     try
     {
-      Test1 s = pp_settings_manager.settings<Test1>();
+      Test1 s = hlvl_settings_manager.settings<Test1>();
     }
     catch (const std::runtime_error& err)
     {
@@ -39,10 +39,10 @@ TEST_CASE( "add", "[unit][settings]" )
 {
   SECTION( "valid" )
   {
-    pp_settings_manager.add_settings<Test1, Test2>();
+    hlvl_settings_manager.add_settings<Test1, Test2>();
 
-    Test1 s1 = pp_settings_manager.settings<Test1>();
-    Test2 s2 = pp_settings_manager.settings<Test2>();
+    Test1 s1 = hlvl_settings_manager.settings<Test1>();
+    Test2 s2 = hlvl_settings_manager.settings<Test2>();
 
     CHECK( s1.a == 0 );
     CHECK( s2.b == 0 );
@@ -55,7 +55,7 @@ TEST_CASE( "add", "[unit][settings]" )
 
     try
     {
-      pp_settings_manager.add_settings<Test1, Test2>();
+      hlvl_settings_manager.add_settings<Test1, Test2>();
     }
     catch (const std::runtime_error& err)
     {
@@ -75,14 +75,14 @@ TEST_CASE( "remove", "[unit][settings]" )
 {
   SECTION( "valid" )
   {
-    pp_settings_manager.remove_settings<Test1, Test2>();
+    hlvl_settings_manager.remove_settings<Test1, Test2>();
 
     bool expected_failure = false;
     bool unexpected_failure = false;
 
     try
     {
-      auto s = pp_settings_manager.settings<Test1>();
+      auto s = hlvl_settings_manager.settings<Test1>();
     }
     catch (const std::runtime_error& err)
     {
@@ -100,7 +100,7 @@ TEST_CASE( "remove", "[unit][settings]" )
 
     try
     {
-      auto s = pp_settings_manager.settings<Test2>();
+      auto s = hlvl_settings_manager.settings<Test2>();
     }
     catch (const std::runtime_error& err)
     {
@@ -118,11 +118,11 @@ TEST_CASE( "remove", "[unit][settings]" )
 
 TEST_CASE( "mutation", "[unit][settings]" )
 {
-  auto& s = pp_general_settings;
+  auto& s = hlvl_general_settings;
   s.application_name = "Test";
   s.application_version = 1u;
 
-  auto& u = pp_general_settings;
+  auto& u = hlvl_general_settings;
 
   CHECK( u.application_name == s.application_name );
   CHECK( u.application_version == s.application_version );
@@ -130,7 +130,7 @@ TEST_CASE( "mutation", "[unit][settings]" )
 
 TEST_CASE( "persistence", "[unit][settings]" )
 {
-  auto& s = pp_general_settings;
+  auto& s = hlvl_general_settings;
 
   CHECK( s.application_name == "Test" );
   CHECK( s.application_version == 1u );
@@ -138,7 +138,7 @@ TEST_CASE( "persistence", "[unit][settings]" )
 
 TEST_CASE( "general", "[unit][settings]" )
 {
-  auto& s_general = pp_general_settings;
+  auto& s_general = hlvl_general_settings;
 
   SECTION( "add_layers" )
   {
@@ -205,10 +205,10 @@ TEST_CASE( "general", "[unit][settings]" )
 
   SECTION( "defaults" )
   {
-    s_general = pp::GeneralSettings::default_values();
+    s_general = hlvl::GeneralSettings::default_values();
 
-    CHECK( s_general.application_name == "PP Application" );
-    CHECK( s_general.application_version == pp_make_version(1, 0, 0) );
+    CHECK( s_general.application_name == "HLVL Application" );
+    CHECK( s_general.application_version == hlvl_make_version(1, 0, 0) );
     CHECK( s_general.vk_layers.empty() );
     CHECK( s_general.vk_instance_extensions.empty() );
     CHECK( s_general.vk_device_extensions.empty() );
@@ -219,7 +219,7 @@ TEST_CASE( "general", "[unit][settings]" )
 
 TEST_CASE( "window", "[unit][settings]" )
 {
-  pp::WindowSettings& s_window = pp_window_settings;
+  hlvl::WindowSettings& s_window = hlvl_window_settings;
 
   SECTION( "aspect_ratio" )
   {
@@ -237,9 +237,9 @@ TEST_CASE( "window", "[unit][settings]" )
 
   SECTION( "defaults" )
   {
-    s_window = pp::WindowSettings::default_values();
+    s_window = hlvl::WindowSettings::default_values();
 
-    CHECK( s_window.title == "PP Application" );
+    CHECK( s_window.title == "HLVL Application" );
     CHECK( s_window.size == std::array<unsigned int, 2>{ 1280, 720 } );
     CHECK( s_window.scale == std::array<float, 2>{ 1.0f, 1.0f } );
     CHECK( s_window.initialized == false );

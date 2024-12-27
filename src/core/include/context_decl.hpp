@@ -1,11 +1,10 @@
-#ifndef physp_core_context_decl_hpp
-#define physp_core_context_decl_hpp
+#pragma once
 
-#include "src/core/include/allocator.hpp"
-#include "src/core/include/interface.hpp"
-#include "src/core/include/ecscontroller.hpp"
+#include "allocator.hpp"
+#include "interface.hpp"
+#include "ecscontroller.hpp"
 
-namespace pp
+namespace hlvl
 {
 
 class Context
@@ -46,6 +45,4 @@ class Context
     vk::raii::Instance vk_instance = nullptr;
 };
 
-} // namespace pp
-
-#endif // physp_core_context_decl_hpp
+} // namespace hlvl

@@ -1,4 +1,4 @@
-#include "tests/test_classes.hpp"
+#include "test_classes.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -6,9 +6,9 @@
 
 TEST_CASE( "new_entity", "[unit][controller]" )
 {
-  pp::ECSController controller;
+  hlvl::ECSController controller;
 
-  pp::Entity entity;
+  hlvl::Entity entity;
   for (unsigned long i = 0; i < 5; ++i)
     entity = controller.new_entity();
 
@@ -17,7 +17,7 @@ TEST_CASE( "new_entity", "[unit][controller]" )
 
 TEST_CASE( "register_components", "[unit][controller]" )
 {
-  pp::ECSController controller;
+  hlvl::ECSController controller;
   auto entity = controller.new_entity();
 
   bool success = true;
@@ -42,7 +42,7 @@ TEST_CASE( "register_components", "[unit][controller]" )
 
 TEST_CASE( "unregister_components", "[unit][controller]" )
 {
-  pp::ECSController controller;
+  hlvl::ECSController controller;
   controller.register_components<Test1, Test2>();
 
   bool success = true;
@@ -66,9 +66,9 @@ TEST_CASE( "unregister_components", "[unit][controller]" )
 
 TEST_CASE( "add_components", "[unit][controller]" )
 {
-  pp::ECSController controller;
+  hlvl::ECSController controller;
   controller.register_components<Test1, Test2>();
-  pp::Entity entity = controller.new_entity();
+  hlvl::Entity entity = controller.new_entity();
 
   bool success = true;
   try
@@ -91,9 +91,9 @@ TEST_CASE( "add_components", "[unit][controller]" )
 
 TEST_CASE( "remove_components", "[unit][controller]" )
 {
-  pp::ECSController controller;
+  hlvl::ECSController controller;
   controller.register_components<Test1, Test2>();
-  pp::Entity entity = controller.new_entity();
+  hlvl::Entity entity = controller.new_entity();
   controller.add_components(entity, Test1(), Test2());
 
   bool success = true;
@@ -117,7 +117,7 @@ TEST_CASE( "remove_components", "[unit][controller]" )
 
 TEST_CASE( "register_systems", "[unit][controller]" )
 {
-  pp::ECSController controller;
+  hlvl::ECSController controller;
 
   bool success = true;
   try
@@ -140,7 +140,7 @@ TEST_CASE( "register_systems", "[unit][controller]" )
 
 TEST_CASE( "unregister_systems", "[unit][controller]" )
 {
-  pp::ECSController controller;
+  hlvl::ECSController controller;
   controller.register_systems<System1, System2>();
 
   bool success = true;
@@ -164,7 +164,7 @@ TEST_CASE( "unregister_systems", "[unit][controller]" )
 
 TEST_CASE( "add_entities_to_system", "[unit][controller]" )
 {
-  pp::ECSController controller;
+  hlvl::ECSController controller;
   controller.register_components<int>()
             .register_systems<System1>()
             .require_components<System1, int>();
@@ -193,7 +193,7 @@ TEST_CASE( "add_entities_to_system", "[unit][controller]" )
 
 TEST_CASE( "remove_entities_from_system", "[unit][controller]" )
 {
-  pp::ECSController controller;
+  hlvl::ECSController controller;
   controller.register_components<int>()
             .register_systems<System1>()
             .require_components<System1, int>();

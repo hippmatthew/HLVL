@@ -1,25 +1,24 @@
-#ifndef physp_core_settings_hpp
-#define physp_core_settings_hpp
+#pragma once
 
-#include "src/core/include/settings_decl.hpp"
+#include "settings_decl.hpp"
 
 #include <stdexcept>
 #include <type_traits>
 
-namespace pp
+namespace hlvl
 {
 
 template <typename T>
 T& SettingsManager::settings()
 {
   static_assert(std::is_base_of<Settings, T>::value,
-    "pp::SettingsManager: attempted to retrieve class that does not inherit from pp::Settings"
+    "hlvl::SettingsManager: attempted to retrieve class that does not inherit from hlvl::Settings"
   );
 
   if (!exists<T>())
   {
     throw std::runtime_error(
-      "pp::SettingsManager: attempted to retrieve unregistered class"
+      "hlvl::SettingsManager: attempted to retrieve unregistered class"
     );
   }
 
@@ -48,21 +47,21 @@ template <typename T>
 void SettingsManager::append()
 {
   static_assert(std::is_base_of<Settings, T>::value,
-    "pp::SettingsManager: attempted to append class that does not inherit from pp::Settings"
+    "hlvl::SettingsManager: attempted to append class that does not inherit from hlvl::Settings"
   );
 
   static_assert(!std::is_same<GeneralSettings, T>::value,
-    "pp::SettingsManager: attempted to append default settings class pp::GeneralSettings"
+    "hlvl::SettingsManager: attempted to append default settings class hlvl::GeneralSettings"
   );
 
   static_assert(!std::is_same<WindowSettings, T>::value,
-    "pp:SettingsManager: attempted to append default settings class pp::WindowSettings"
+    "hlvl:SettingsManager: attempted to append default settings class hlvl::WindowSettings"
   );
 
   if (exists<T>())
   {
     throw std::runtime_error(
-      "pp::SettingsManager: attempted to append already registered class"
+      "hlvl::SettingsManager: attempted to append already registered class"
     );
   }
 
@@ -73,27 +72,25 @@ template <typename T>
 void SettingsManager::erase()
 {
   static_assert(std::is_base_of<Settings, T>::value,
-    "pp::SettingsManager: attempted removal of class that does not inherit from pp::Settings"
+    "hlvl::SettingsManager: attempted removal of class that does not inherit from hlvl::Settings"
   );
 
   static_assert(!std::is_same<GeneralSettings, T>::value,
-    "pp::SettingsManager: attempted removal of default settings class pp::General"
+    "hlvl::SettingsManager: attempted removal of default settings class hlvl::General"
   );
 
   static_assert(!std::is_same<WindowSettings, T>::value,
-    "pp:SettingsManager: attempted removeal of default settings class pp::WindowSettings"
+    "hlvl:SettingsManager: attempted removeal of default settings class hlvl::WindowSettings"
   );
 
   if (!exists<T>())
   {
     throw std::runtime_error(
-      "pp::SettingsManager: attempted to erase unregistered class"
+      "hlvl::SettingsManager: attempted to erase unregistered class"
     );
   }
 
   settingsMap.erase(typeid(T).name());
 }
 
-} // namespace pp
-
-#endif // physp_core_settings_hpp
+} // namespace hlvl

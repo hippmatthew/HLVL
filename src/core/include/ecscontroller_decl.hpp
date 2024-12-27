@@ -1,11 +1,10 @@
-#ifndef physp_core_ecscontroller_decl_hpp
-#define physp_core_ecscontroller_decl_hpp
+#pragma once
 
-#include "src/core/include/entitymanager.hpp"
-#include "src/core/include/components.hpp"
-#include "src/core/include/systems.hpp"
+#include "entitymanager.hpp"
+#include "components.hpp"
+#include "systems.hpp"
 
-namespace pp
+namespace hlvl
 {
 
 class ECSController
@@ -67,6 +66,4 @@ class ECSController
     SystemManager systemManager;
 };
 
-} // namespace pp
-
-#endif // physp_core_ecscontroller_decl_hpp
+} // namespace hlvl

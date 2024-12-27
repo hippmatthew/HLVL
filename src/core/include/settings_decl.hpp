@@ -1,31 +1,30 @@
-#ifndef physp_core_settings_decl_hpp
-#define physp_core_settings_decl_hpp
+#pragma once
 
-#ifndef physp_vulkan_include
-#define physp_vulkan_include
+#ifndef hlvl_vulkan_include
+#define hlvl_vulkan_include
 
 #define VULKAN_HPP_NO_CONSTRUCTORS
 #include <vulkan/vulkan_raii.hpp>
 
-#endif // physp_vulkan_include
+#endif // hlvl_vulkan_include
 
 #include <map>
 #include <memory>
 #include <string>
 
-#define pp_make_version(major, minor, patch) (  \
+#define hlvl_make_version(major, minor, patch) (  \
   ((major) << 16) | \
   ((minor) << 8)  | \
   ((patch))         \
 )
-#define pp_vulkan_version   VK_MAKE_API_VERSION(0, 1, 3, 290)
-#define pp_engine_version   pp_make_version(0, 62, 1)
+#define hlvl_vulkan_version   VK_MAKE_API_VERSION(0, 1, 3, 290)
+#define hlvl_engine_version   hlvl_make_version(0, 62, 1)
 
-#define pp_settings_manager pp::SettingsManager::instance()
-#define pp_general_settings pp_settings_manager.settings<pp::GeneralSettings>()
-#define pp_window_settings  pp_settings_manager.settings<pp::WindowSettings>()
+#define hlvl_settings_manager hlvl::SettingsManager::instance()
+#define hlvl_general_settings hlvl_settings_manager.settings<hlvl::GeneralSettings>()
+#define hlvl_window_settings  hlvl_settings_manager.settings<hlvl::WindowSettings>()
 
-namespace pp
+namespace hlvl
 {
 
 class Settings
@@ -66,8 +65,8 @@ class GeneralSettings : public Settings
     bool portability_enabled = false;
     bool draw_window = false;
 
-    std::string application_name = "PP Application";
-    unsigned int application_version = pp_make_version(1, 0, 0);
+    std::string application_name = "HLVL Application";
+    unsigned int application_version = hlvl_make_version(1, 0, 0);
 
     std::vector<const char *> vk_layers;
     std::vector<const char *> vk_instance_extensions;
@@ -96,7 +95,7 @@ class WindowSettings : public Settings
   public:
     bool initialized = false;
 
-    std::string title = "PP Application";
+    std::string title = "HLVL Application";
     std::array<unsigned int, 2> size = { 1280, 720 };
     std::array<float, 2> scale = { 1.0f, 1.0f };
 
@@ -144,6 +143,4 @@ class SettingsManager
     std::map<const char *, std::shared_ptr<Settings>> settingsMap;
 };
 
-} // namespace pp
-
-#endif // physp_core_settings_decl_hpp
+} // namespace hlvl

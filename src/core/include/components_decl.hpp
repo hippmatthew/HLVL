@@ -1,12 +1,11 @@
-#ifndef physp_core_components_decl_hpp
-#define physp_core_components_decl_hpp
+#pragma once
 
-#include "src/core/include/entitymanager.hpp"
+#include "entitymanager.hpp"
 
 #include <map>
 #include <vector>
 
-namespace pp
+namespace hlvl
 {
 
 class IComponentArray
@@ -102,6 +101,4 @@ class ComponentManager
     unsigned long componentIndex = 0;
 };
 
-} // namespace pp
-
-#endif // physp_core_components_decl_hpp
+} // namespace hlvl

@@ -1,9 +1,8 @@
-#ifndef physp_core_allocation_hpp
-#define physp_core_allocation_hpp
+#pragma once
 
-#include "src/core/include/device.hpp"
+#include "device.hpp"
 
-namespace pp
+namespace hlvl
 {
 
 class Allocator;
@@ -69,6 +68,4 @@ class Allocation
     std::vector<Buffer> buffers;
 };
 
-} // namespace pp
-
-#endif // physp_core_allocation_hpp
+} // namespace hlvl

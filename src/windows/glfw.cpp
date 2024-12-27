@@ -1,12 +1,12 @@
-#include "src/core/include/iwindow.hpp"
-#include "src/core/include/settings.hpp"
-#include "src/windows/include/glfw.hpp"
+#include "../core/include/iwindow.hpp"
+#include "../core/include/settings.hpp"
+#include "include/glfw.hpp"
 
 #include <limits>
 #include <stdexcept>
 #include <iostream>
 
-namespace pp::windows
+namespace hlvl::windows
 {
 
 #ifdef TESTS
@@ -16,25 +16,25 @@ namespace pp::windows
 
 GLFW::GLFW()
 {
-  if (!pp_window_settings.initialized)
+  if (!hlvl_window_settings.initialized)
   {
     glfwInit();
-    pp_window_settings.initialized = true;
+    hlvl_window_settings.initialized = true;
   }
 
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
   gl_window = glfwCreateWindow(
-    pp_window_settings.size[0],
-    pp_window_settings.size[1],
-    pp_window_settings.title.c_str(),
+    hlvl_window_settings.size[0],
+    hlvl_window_settings.size[1],
+    hlvl_window_settings.title.c_str(),
     nullptr, nullptr
   );
 
   float sx, sy;
   glfwGetWindowContentScale(gl_window, &sx, &sy);
 
-  pp_window_settings.scale = { sx, sy };
+  hlvl_window_settings.scale = { sx, sy };
 
   glfwSetWindowUserPointer(gl_window, this);
   glfwSetFramebufferSizeCallback(gl_window, GLFW::resize_callback);
@@ -53,10 +53,10 @@ GLFW::~GLFW()
 
 std::vector<const char *> GLFW::instance_extensions()
 {
-  if (!pp_window_settings.initialized)
+  if (!hlvl_window_settings.initialized)
   {
     glfwInit();
-    pp_window_settings.initialized = true;
+    hlvl_window_settings.initialized = true;
   }
 
   unsigned int count = 0;
@@ -100,7 +100,7 @@ unsigned long GLFW::next_image_index(const vk::raii::Semaphore& semaphore)
   if (result == vk::Result::eSuboptimalKHR || result == vk::Result::eErrorOutOfDateKHR || modifiedFramebuffer)
     recreateSwapchain();
   else if (result != vk::Result::eSuccess)
-    throw std::runtime_error("pp::windows::GLFW: failed to get image index");
+    throw std::runtime_error("hlvl::windows::GLFW: failed to get image index");
 
   return index;
 }
@@ -307,9 +307,9 @@ void GLFW::createSwapchain()
   vk::SwapchainCreateInfoKHR ci_swapchain{
     .surface                = *vk_surface,
     .minImageCount          = imageCount,
-    .imageFormat            = pp_window_settings.format,
-    .imageColorSpace        = pp_window_settings.color_space,
-    .imageExtent            = pp_window_settings.extent(),
+    .imageFormat            = hlvl_window_settings.format,
+    .imageColorSpace        = hlvl_window_settings.color_space,
+    .imageExtent            = hlvl_window_settings.extent(),
     .imageArrayLayers       = 1,
     .imageUsage             = vk::ImageUsageFlagBits::eColorAttachment,
     .imageSharingMode       = vk::SharingMode::eExclusive,
@@ -317,7 +317,7 @@ void GLFW::createSwapchain()
     .pQueueFamilyIndices    = nullptr,
     .preTransform           = capabilities.currentTransform,
     .compositeAlpha         = vk::CompositeAlphaFlagBitsKHR::eOpaque,
-    .presentMode            = pp_window_settings.present_mode,
+    .presentMode            = hlvl_window_settings.present_mode,
     .clipped                = vk::True,
     .oldSwapchain           = nullptr
   };
@@ -338,11 +338,11 @@ void GLFW::recreateSwapchain()
 
   p_device->logical().waitIdle();
 
-  pp_window_settings.size = { static_cast<unsigned int>(width), static_cast<unsigned int>(height) };
+  hlvl_window_settings.size = { static_cast<unsigned int>(width), static_cast<unsigned int>(height) };
 
   float sx, sy;
   glfwGetWindowContentScale(gl_window, &sx, &sy);
-  pp_window_settings.scale = { sx, sy };
+  hlvl_window_settings.scale = { sx, sy };
 
   vk_swapchain.clear();
   vk_images.clear();
@@ -362,7 +362,7 @@ void GLFW::createViews()
     vk::ImageViewCreateInfo ci_view{
       .image      = vk_image,
       .viewType   = vk::ImageViewType::e2D,
-      .format     = pp_window_settings.format,
+      .format     = hlvl_window_settings.format,
       .components = {
         .r  = vk::ComponentSwizzle::eIdentity,
         .g  = vk::ComponentSwizzle::eIdentity,
@@ -382,4 +382,4 @@ void GLFW::createViews()
   }
 }
 
-} // namespace pp::windows
+} // namespace hlvl::windows

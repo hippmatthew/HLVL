@@ -1,8 +1,8 @@
-#include "src/core/include/entitymanager.hpp"
+#include "include/entitymanager.hpp"
 
 #include <stdexcept>
 
-namespace pp
+namespace hlvl
 {
 
 Entity EntityManager::newEntity()
@@ -22,7 +22,7 @@ void EntityManager::validateEntity(Entity entity)
 {
   if (signatureMap.find(entity) != signatureMap.end()) return;
 
-  throw std::out_of_range("pp::EntityManager: entity doesnt exist in the entity manager");
+  throw std::out_of_range("hlvl::EntityManager: entity doesnt exist in the entity manager");
 }
 
-} // namespace pp
+} // namespace hlvl

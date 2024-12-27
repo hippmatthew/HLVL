@@ -1,4 +1,4 @@
-#include "tests/test_classes.hpp"
+#include "test_classes.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -9,21 +9,21 @@ TEST_CASE( "buffer_allocation", "[unit][allocator]" )
 {
   reset_settings();
 
-  pp_general_settings.vk_layers.emplace_back("VK_LAYER_KHRONOS_validation");
+  hlvl_general_settings.vk_layers.emplace_back("VK_LAYER_KHRONOS_validation");
 
-  pp::Context context;
+  hlvl::Context context;
   context.initialize();
 
   auto& allocator = context.allocator();
 
   SECTION( "single_resource_allocation" )
   {
-    pp::Resource<std::vector<Vertex>> resource({{ 1, 2, 3 }}, pp::ResourceType::vertex);
+    hlvl::Resource<std::vector<Vertex>> resource({{ 1, 2, 3 }}, hlvl::ResourceType::vertex);
 
     bool success = true;
     try
     {
-      allocator.new_allocation({ pp::Locality::host, { &resource } });
+      allocator.new_allocation({ hlvl::Locality::host, { &resource } });
     }
     catch (std::exception& e)
     {
@@ -41,15 +41,15 @@ TEST_CASE( "buffer_allocation", "[unit][allocator]" )
 
   SECTION( "multiple_resource_allocation" )
   {
-    pp::Resource<std::vector<Vertex>> resource1({{ 1, 2, 3 }}, pp::ResourceType::vertex);
-    pp::Resource<std::vector<unsigned int>> resource2({ 1, 2, 3 }, pp::ResourceType::index);
-    pp::Resource<Test1> resource3(Test1{}, pp::ResourceType::uniform);
-    pp::Resource<Test2> resource4(Test2{}, pp::ResourceType::uniform);
+    hlvl::Resource<std::vector<Vertex>> resource1({{ 1, 2, 3 }}, hlvl::ResourceType::vertex);
+    hlvl::Resource<std::vector<unsigned int>> resource2({ 1, 2, 3 }, hlvl::ResourceType::index);
+    hlvl::Resource<Test1> resource3(Test1{}, hlvl::ResourceType::uniform);
+    hlvl::Resource<Test2> resource4(Test2{}, hlvl::ResourceType::uniform);
 
     bool success = true;
     try
     {
-      allocator.new_allocation({ pp::Locality::device, { &resource1, &resource2, &resource3, &resource4 } });
+      allocator.new_allocation({ hlvl::Locality::device, { &resource1, &resource2, &resource3, &resource4 } });
     }
     catch (std::exception& e)
     {
@@ -70,15 +70,15 @@ TEST_CASE( "buffer_access", "[unit][allocator]" )
 {
   reset_settings();
 
-  pp_general_settings.vk_layers.emplace_back("VK_LAYER_KHRONOS_validation");
+  hlvl_general_settings.vk_layers.emplace_back("VK_LAYER_KHRONOS_validation");
 
-  pp::Context context;
+  hlvl::Context context;
   context.initialize();
 
   auto& allocator = context.allocator();
 
-  pp::Resource<Test1> resource(Test1{}, pp::ResourceType::uniform);
-  allocator.new_allocation({ pp::Locality::host, { &resource } });
+  hlvl::Resource<Test1> resource(Test1{}, hlvl::ResourceType::uniform);
+  allocator.new_allocation({ hlvl::Locality::host, { &resource } });
 
   CHECK( *resource.buffer() != nullptr );
 }
@@ -87,17 +87,17 @@ TEST_CASE( "buffer_update", "[unit][allocator]" )
 {
   reset_settings();
 
-  pp_general_settings.vk_layers.emplace_back("VK_LAYER_KHRONOS_validation");
+  hlvl_general_settings.vk_layers.emplace_back("VK_LAYER_KHRONOS_validation");
 
-  pp::Context context;
+  hlvl::Context context;
   context.initialize();
 
   auto& allocator = context.allocator();
 
   SECTION( "host_locality" )
   {
-    pp::Resource<Test1> resource(Test1{}, pp::ResourceType::uniform);
-    allocator.new_allocation({ pp::Locality::host, { &resource } });
+    hlvl::Resource<Test1> resource(Test1{}, hlvl::ResourceType::uniform);
+    allocator.new_allocation({ hlvl::Locality::host, { &resource } });
 
     Test1 test;
     test.a = 1;
@@ -123,8 +123,8 @@ TEST_CASE( "buffer_update", "[unit][allocator]" )
 
   SECTION( "device_locality" )
   {
-    pp::Resource<Test1> resource(Test1{}, pp::ResourceType::uniform);
-    allocator.new_allocation({ pp::Locality::device, { &resource } });
+    hlvl::Resource<Test1> resource(Test1{}, hlvl::ResourceType::uniform);
+    allocator.new_allocation({ hlvl::Locality::device, { &resource } });
 
     Test1 test;
     test.a = 1;

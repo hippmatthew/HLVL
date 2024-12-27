@@ -1,17 +1,16 @@
-#ifndef physp_core_iwindow_hpp
-#define physp_core_iwindow_hpp
+#pragma once
 
-#ifndef physp_vulkan_include
-#define physp_vulkan_include
+#ifndef hlvl_vulkan_include
+#define hlvl_vulkan_include
 
 #define VULKAN_HPP_NO_CONSTRUCTORS
 #include <vulkan/vulkan_raii.hpp>
 
-#endif // physp_vulkan_include
+#endif // hlvl_vulkan_include
 
-#include "src/core/include/device.hpp"
+#include "device.hpp"
 
-namespace pp
+namespace hlvl
 {
 
 enum Key
@@ -123,6 +122,4 @@ class IWindow
     std::map<int, std::function<void()>> key_map;
 };
 
-} // namespace pp
-
-#endif // physp_core_iwindow_hpp
+} // namespace hlvl

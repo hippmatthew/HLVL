@@ -1,10 +1,10 @@
-#ifndef physp_core_interface_decl_hpp
-#define physp_core_interface_decl_hpp
+#pragma once
 
-#include "src/core/include/iwindow.hpp"
+#include "iwindow.hpp"
+
 #include <memory>
 
-namespace pp
+namespace hlvl
 {
 
 class IInterface
@@ -36,7 +36,7 @@ template <typename T>
 class Interface : public IInterface
 {
   static_assert(std::is_base_of<IWindow, T>::value,
-    "pp::Interface: attempted to create an interface with non-window class"
+    "hlvl::Interface: attempted to create an interface with non-window class"
   );
 
   public:
@@ -59,6 +59,4 @@ class Interface : public IInterface
     T window;
 };
 
-} // namespace pp
-
-#endif // physp_core_interface_decl_hpp
+} // namespace hlvl

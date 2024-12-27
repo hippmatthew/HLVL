@@ -1,18 +1,17 @@
-#ifndef physp_core_components_hpp
-#define physp_core_components_hpp
+#pragma once
 
-#include "src/core/include/components_decl.hpp"
+#include "components_decl.hpp"
 
 #include <stdexcept>
 
-namespace pp
+namespace hlvl
 {
 
 template <typename T>
 T& ComponentArray<T>::operator [] (Entity entity)
 {
   if (indexMap.find(entity) == indexMap.end())
-    throw std::out_of_range("pp::ComponentArray: attempted to get component for entity not in array");
+    throw std::out_of_range("hlvl::ComponentArray: attempted to get component for entity not in array");
 
   return data[indexMap.at(entity)];
 }
@@ -49,7 +48,7 @@ template <typename T>
 void ComponentArray<T>::erase(Entity entity)
 {
   if (indexMap.find(entity) == indexMap.end())
-    throw std::out_of_range("pp::ComponentArray: attempted to erase data for entity not in component array");
+    throw std::out_of_range("hlvl::ComponentArray: attempted to erase data for entity not in component array");
 
   entityMap.erase(indexMap.at(entity));
 
@@ -70,7 +69,7 @@ template <typename T>
 const Signature& ComponentManager::signature() const
 {
   if (!isRegistered<T>())
-    throw std::out_of_range("pp::ComponentManager: attempted to access signature of non-registered component type");
+    throw std::out_of_range("hlvl::ComponentManager: attempted to access signature of non-registered component type");
 
   return signatureMap.at(typeid(T).name());
 }
@@ -121,7 +120,7 @@ template <typename T>
 std::shared_ptr<ComponentArray<T>> ComponentManager::array()
 {
   if (!isRegistered<T>())
-    throw std::out_of_range("pp::ComponentManager: attempted to access component array of non-registered component type");
+    throw std::out_of_range("hlvl::ComponentManager: attempted to access component array of non-registered component type");
 
   return static_pointer_cast<ComponentArray<T>>(componentMap.at(typeid(T).name()));
 }
@@ -132,12 +131,12 @@ void ComponentManager::newArray()
   if (isRegistered<T>())
   {
     throw std::runtime_error(
-      "pp::ComponentManager: attempted to add component array of previously registered component type"
+      "hlvl::ComponentManager: attempted to add component array of previously registered component type"
     );
   }
 
   if (componentIndex > 63)
-    throw std::runtime_error("pp::ComponentManager: attempted to add component array while at max capacity");
+    throw std::runtime_error("hlvl::ComponentManager: attempted to add component array while at max capacity");
 
   componentMap.emplace(std::make_pair(typeid(T).name(), std::make_shared<ComponentArray<T>>()));
   signatureMap.emplace(std::make_pair(typeid(T).name(), Signature(1 << componentIndex++)));
@@ -147,7 +146,7 @@ template <typename T>
 void ComponentManager::removeArray()
 {
   if (!isRegistered<T>())
-    throw std::out_of_range("pp::ComponentManager: attempted to remove component array of non-registered component type");
+    throw std::out_of_range("hlvl::ComponentManager: attempted to remove component array of non-registered component type");
 
   componentMap.erase(typeid(T).name());
   signatureMap.erase(typeid(T).name());
@@ -171,6 +170,4 @@ void ComponentManager::removeData(Entity entity)
   array<T>()->erase(entity);
 }
 
-} // namespace pp
-
-#endif // physp_core_components_hpp
+} // namespace hlvl

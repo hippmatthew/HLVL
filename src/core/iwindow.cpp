@@ -1,10 +1,10 @@
-#include "src/core/include/iwindow.hpp"
-#include "src/core/include/settings_decl.hpp"
-#include "vulkan/vulkan_enums.hpp"
+#include "include/iwindow.hpp"
+#include "include/settings_decl.hpp"
+
 #include <limits>
 #include <stdexcept>
 
-namespace pp
+namespace hlvl
 {
 
 const vk::raii::SurfaceKHR& IWindow::surface() const
@@ -33,7 +33,7 @@ void IWindow::add_keybind(std::vector<Key>&& keys, std::function<void()> callbac
 void IWindow::validateBinding(int bits) const
 {
   if (key_map.find(bits) != key_map.end())
-    throw std::runtime_error("pp::IWindow: attempted to submit callback to a keybind that alread has one");
+    throw std::runtime_error("hlvl::IWindow: attempted to submit callback to a keybind that alread has one");
 }
 
 void IWindow::call_keybind(int bits) const
@@ -48,26 +48,26 @@ void IWindow::check_format(const vk::raii::PhysicalDevice& vk_physicalDevice) co
 
   for (const auto& format : formats)
   {
-    if (format.format == pp_window_settings.format && format.colorSpace == pp_window_settings.color_space)
+    if (format.format == hlvl_window_settings.format && format.colorSpace == hlvl_window_settings.color_space)
       return;
   }
 
-  pp_window_settings.format = formats[0].format;
-  pp_window_settings.color_space = formats[0].colorSpace;
+  hlvl_window_settings.format = formats[0].format;
+  hlvl_window_settings.color_space = formats[0].colorSpace;
 }
 
 void IWindow::check_present_mode(const vk::raii::PhysicalDevice& vk_physicalDevice) const
 {
   for (const auto& mode : vk_physicalDevice.getSurfacePresentModesKHR(*vk_surface))
-    if (mode == pp_window_settings.present_mode) return;
+    if (mode == hlvl_window_settings.present_mode) return;
 
-  pp_window_settings.present_mode = vk::PresentModeKHR::eFifo;
+  hlvl_window_settings.present_mode = vk::PresentModeKHR::eFifo;
 }
 
 void IWindow::check_extent(const vk::raii::PhysicalDevice& vk_physicalDevice) const
 {
-  if (pp_window_settings.extent().width != std::numeric_limits<unsigned int>::max() &&
-        pp_window_settings.extent().height != std::numeric_limits<unsigned int>::max())
+  if (hlvl_window_settings.extent().width != std::numeric_limits<unsigned int>::max() &&
+        hlvl_window_settings.extent().height != std::numeric_limits<unsigned int>::max())
   {
     return;
   }
@@ -83,15 +83,15 @@ void IWindow::check_extent(const vk::raii::PhysicalDevice& vk_physicalDevice) co
 
   for (unsigned int i = 0; i < 2; ++i)
   {
-    if (pp_window_settings.size[i] * pp_window_settings.scale[i] < range[2 * i])
+    if (hlvl_window_settings.size[i] * hlvl_window_settings.scale[i] < range[2 * i])
     {
-      pp_window_settings.size[i] = range[2 * i] / pp_window_settings.scale[i];
+      hlvl_window_settings.size[i] = range[2 * i] / hlvl_window_settings.scale[i];
     }
-    else if (pp_window_settings.size[i] * pp_window_settings.scale[i] > range[2 * i + 1])
+    else if (hlvl_window_settings.size[i] * hlvl_window_settings.scale[i] > range[2 * i + 1])
     {
-      pp_window_settings.size[i] = range[2 * i + 1] / pp_window_settings.scale[i];
+      hlvl_window_settings.size[i] = range[2 * i + 1] / hlvl_window_settings.scale[i];
     }
   }
 }
 
-} // namespace pp
+} // namespace hlvl

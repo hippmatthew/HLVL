@@ -1,6 +1,6 @@
-#include "src/core/include/resource_decl.hpp"
+#include "include/resource_decl.hpp"
 
-namespace pp
+namespace hlvl
 {
 
 IResource::IResource(std::size_t s) : size(s) {}
@@ -25,4 +25,4 @@ IResource& IResource::operator = (IResource&&)
   return *this;
 }
 
-} // namespace pp
+} // namespace hlvl

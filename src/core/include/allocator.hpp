@@ -1,13 +1,12 @@
-#ifndef physp_core_allocator_hpp
-#define physp_core_allocator_hpp
+#pragma once
 
-#include "src/core/include/allocation.hpp"
-#include "src/core/include/stagingbuffer.hpp"
+#include "allocation.hpp"
+#include "stagingbuffer.hpp"
 
 #include <future>
 #include <queue>
 
-namespace pp
+namespace hlvl
 {
 
 class Allocator
@@ -46,6 +45,4 @@ class Allocator
     std::mutex mutex;
 };
 
-} // namespace pp
-
-#endif // physp_core_allocator_hpp
+} // namespace hlvl

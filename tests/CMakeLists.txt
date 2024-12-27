@@ -1,4 +1,4 @@
-project(PhysicsPlus::Tests)
+project(HLVL::Tests)
 
 find_package(Catch2 3 REQUIRED)
 
@@ -17,6 +17,6 @@ set(SOURCES
 add_executable(test ${SOURCES})
 
 target_link_libraries(test PRIVATE
-  physp
+  hlvl
   Catch2::Catch2
 )

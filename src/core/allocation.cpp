@@ -1,10 +1,10 @@
-#include "src/core/include/allocation.hpp"
-#include "src/core/include/resource_decl.hpp"
+#include "include/allocation.hpp"
+#include "include/resource_decl.hpp"
 
 #include <stdexcept>
 #include <iostream>
 
-namespace pp
+namespace hlvl
 {
 
 Buffer::Buffer(const Device& device, IResource * resource, unsigned long j, bool deviceLocal)
@@ -51,7 +51,7 @@ Buffer::Buffer(Buffer&& buffer)
 const vk::raii::Buffer& Buffer::buffer() const
 {
   if (*vk_buffer == nullptr)
-    throw std::runtime_error("pp::Buffer: vk_buffer is null handle");
+    throw std::runtime_error("hlvl::Buffer: vk_buffer is null handle");
   return vk_buffer;
 }
 
@@ -124,7 +124,7 @@ unsigned int Allocation::findIndex(
     ++index;
   }
 
-  throw std::runtime_error("pp::Allocation: could not find suitable memory type index");
+  throw std::runtime_error("hlvl::Allocation: could not find suitable memory type index");
 }
 
-} // namespace pp
+} // namespace hlvl

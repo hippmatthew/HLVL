@@ -1,10 +1,10 @@
-#include "src/core/include/allocator.hpp"
-#include "src/core/include/resource_decl.hpp"
-#include "src/core/include/stagingbuffer.hpp"
+#include "include/allocator.hpp"
+#include "include/resource_decl.hpp"
+#include "include/stagingbuffer.hpp"
 
 #include <stdexcept>
 
-namespace pp
+namespace hlvl
 {
 
 Allocator::Allocator(std::shared_ptr<Device> device)
@@ -42,10 +42,10 @@ void Allocator::wait()
 void Allocator::validateIndex(const AllocationIndex& index)
 {
   if (index.first >= allocations.size())
-    throw std::out_of_range("pp::Allocator: allocation index out of range");
+    throw std::out_of_range("hlvl::Allocator: allocation index out of range");
 
   if (index.second >= allocations[index.first].buffers.size())
-    throw std::out_of_range("pp::Allocator: allocation sub-index out of buffer range");
+    throw std::out_of_range("hlvl::Allocator: allocation sub-index out of buffer range");
 }
 
 void Allocator::hostUpdate(const AllocationIndex& index, void * data)
@@ -101,4 +101,4 @@ void Allocator::deviceUpdate(const AllocationIndex& index, void * data, const st
   ));
 }
 
-} // namespace pp
+} // namespace hlvl

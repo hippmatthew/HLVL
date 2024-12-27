@@ -1,11 +1,10 @@
-#ifndef physp_core_systems_decl_hpp
-#define physp_core_systems_decl_hpp
+#pragma once
 
-#include "src/core/include/components.hpp"
+#include "components.hpp"
 
 #include <set>
 
-namespace pp
+namespace hlvl
 {
 
 class ISystem
@@ -78,6 +77,4 @@ class SystemManager
     std::map<const char *, Signature> signatureMap;
 };
 
-} // namespace pp
-
-#endif // physp_core_systems_decl_hpp
+} // namespace hlvl

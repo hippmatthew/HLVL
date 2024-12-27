@@ -6,8 +6,8 @@
 
 TEST_CASE( "add_systems", "[unit][systemmanager]" )
 {
-  pp::ComponentManager componentManager;
-  pp::SystemManager systemManager;
+  hlvl::ComponentManager componentManager;
+  hlvl::SystemManager systemManager;
 
   bool success = true;
   try
@@ -30,8 +30,8 @@ TEST_CASE( "add_systems", "[unit][systemmanager]" )
 
 TEST_CASE( "remove_systems", "[unit][systemmanager]" )
 {
-  pp::ComponentManager componentManager;
-  pp::SystemManager systemManager;
+  hlvl::ComponentManager componentManager;
+  hlvl::SystemManager systemManager;
 
   systemManager.addSystems<System1, System2>(&componentManager);
 
@@ -56,8 +56,8 @@ TEST_CASE( "remove_systems", "[unit][systemmanager]" )
 
 TEST_CASE( "add_entities", "[unit][systemmanager]" )
 {
-  pp::ComponentManager componentManager;
-  pp::SystemManager systemManager;
+  hlvl::ComponentManager componentManager;
+  hlvl::SystemManager systemManager;
 
   systemManager.addSystems<System1>(&componentManager);
 
@@ -82,8 +82,8 @@ TEST_CASE( "add_entities", "[unit][systemmanager]" )
 
 TEST_CASE( "remove_entities", "[unit][systemmanager]" )
 {
-  pp::ComponentManager componentManager;
-  pp::SystemManager systemManager;
+  hlvl::ComponentManager componentManager;
+  hlvl::SystemManager systemManager;
 
   systemManager.addSystems<System1>(&componentManager);
   systemManager.addEntities<System1>({ 0, 1, 2, 3 });

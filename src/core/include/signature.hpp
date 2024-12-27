@@ -1,7 +1,6 @@
-#ifndef physp_core_signature_hpp
-#define physp_core_signature_hpp
+#pragma once
 
-namespace pp
+namespace hlvl
 {
 
 class Signature
@@ -31,6 +30,4 @@ class Signature
     unsigned long bits = 0x0ul;
 };
 
-} // namespace pp
-
-#endif // physp_core_signature_hpp
+} // namespace hlvl

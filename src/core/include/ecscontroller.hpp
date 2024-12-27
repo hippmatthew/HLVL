@@ -1,11 +1,10 @@
-#ifndef physp_core_ecscontroller_hpp
-#define physp_core_ecscontroller_hpp
+#pragma once
 
-#include "src/core/include/ecscontroller_decl.hpp"
+#include "ecscontroller_decl.hpp"
 
 #include <stdexcept>
 
-namespace pp
+namespace hlvl
 {
 
 template <typename T>
@@ -26,7 +25,7 @@ ECSController& ECSController::add_to_system(std::vector<Entity>&& entities)
   for (const auto& entity : entities)
   {
     if ((entityManager.signature(entity) & systemManager.signature<T>()) != systemManager.signature<T>())
-      throw std::runtime_error("pp::ECSController: attempted to add entity of non-matching signature to system");
+      throw std::runtime_error("hlvl::ECSController: attempted to add entity of non-matching signature to system");
   }
 
   systemManager.addEntities<T>(std::move(entities));
@@ -106,6 +105,4 @@ ECSController& ECSController::unrequire_components()
   return *this;
 }
 
-} // namespace pp
-
-#endif // physp_core_ecscontroller_hpp
+} // namespace hlvl

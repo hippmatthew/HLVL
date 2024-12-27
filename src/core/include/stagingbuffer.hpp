@@ -1,9 +1,8 @@
-#ifndef physp_core_stagingbuffer_hpp
-#define physp_core_stagingbuffer_hpp
+#pragma once
 
-#include "src/core/include/device.hpp"
+#include "device.hpp"
 
-namespace pp
+namespace hlvl
 {
 
 class IResource;
@@ -41,6 +40,4 @@ class StagingBuffer
     vk::raii::Fence vk_fence = nullptr;
 };
 
-} // namespace pp
-
-#endif // physp_core_stagingbuffer_hpp
+} // namespace hlvl
