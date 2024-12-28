@@ -1,4 +1,4 @@
-#include "tests/test_classes.hpp"
+#include "test_classes.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 

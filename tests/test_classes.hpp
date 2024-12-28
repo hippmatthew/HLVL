@@ -1,6 +1,6 @@
 #pragma once
 
-#include "hlvl/hlvl.hpp"
+#include "../build/include/hlvl/hlvl.hpp"
 
 class Test1 : public hlvl::Settings
 {

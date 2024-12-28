@@ -1,4 +1,4 @@
-#include "hlvl/hlvl.hpp"
+#include "../build/include/hlvl/hlvl.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 

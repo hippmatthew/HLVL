@@ -39,38 +39,23 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
   if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "arm64")
     include_directories(
-      ${HLVL_INCL_DIR}
-      ${CMAKE_SOURCE_DIR}
       /opt/homebrew/include
       /usr/local/include
     )
 
     link_directories(
-      ${HLVL_LIB_DIR}
       /opt/homebrew/lib
       /usr/local/lib
     )
   else()
     include_directories(
-      ${HLVL_INCL_DIR}
-      ${CMAKE_SOURCE_DIR}
       /usr/local/include
     )
 
     link_directories(
-      ${HLVL_LIB_DIR}
       /usr/local/lib
     )
   endif()
-else()
-  include_directories(
-    ${HLVL_INCL_DIR}
-    ${CMAKE_SOURCE_DIR}
-  )
-
-  link_directories(
-    ${HLVL_LIB_DIR}
-  )
 endif()
 
 set(LINKS

@@ -16,6 +16,12 @@ set(SOURCES
 
 add_executable(test ${SOURCES})
 
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
+  set_target_properties(test PROPERTIES
+    LINK_FLAGS "-rpath /usr/local/lib"
+  )
+endif()
+
 target_link_libraries(test PRIVATE
   hlvl
   Catch2::Catch2
