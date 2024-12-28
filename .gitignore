@@ -4,6 +4,3 @@
 /.cache/
 /.vscode/
 /.ropeproject/
-
-# Files
-compile_commands.json

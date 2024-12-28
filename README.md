@@ -48,6 +48,9 @@ A general workflow for using this library goes as such:
 
 ## How HLVL Works
 
+![Alt text](HLVL UML Diagram : ./UML.svg)
+<img src="./UML.svg">
+
 ### Global Settings
 
 HLVL has a singleton, `hlvl::Settings`, used to manage settings across all scopes of the simulation. It can be accessed through the macro, `hlvl_global_settings`. Use this to modify the default settings or add your own custom settings if needed.
