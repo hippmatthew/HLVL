@@ -48,7 +48,6 @@ A general workflow for using this library goes as such:
 
 ## How HLVL Works
 
-![Alt text](HLVL UML Diagram : ./UML.svg)
 <img src="./UML.svg">
 
 ### Global Settings
