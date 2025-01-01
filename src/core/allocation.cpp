@@ -2,7 +2,6 @@
 #include "include/resource_decl.hpp"
 
 #include <stdexcept>
-#include <iostream>
 
 namespace hlvl
 {
