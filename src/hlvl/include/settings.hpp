@@ -10,9 +10,7 @@
   (patch) \
 )
 
-#ifndef hlvl_engine_version
-#define hlvl_engine_version hlvl_make_version(0, 0, 0)
-#endif //hlvl_engine_version
+#define hlvl_engine_version hlvl_make_version(0, 67, 0)
 
 namespace hlvl {
 

@@ -4,3 +4,6 @@
 /.cache/
 /.vscode/
 /.ropeproject/
+
+# Files
+.DS_Store
