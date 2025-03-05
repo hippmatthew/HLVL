@@ -1,4 +1,4 @@
-#include "src/hlvl/include/settings.hpp"
+#include "src/core/include/settings.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 

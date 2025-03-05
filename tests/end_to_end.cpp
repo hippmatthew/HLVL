@@ -1,5 +1,5 @@
 #define hlvl_tests
-#include "src/hlvl/include/context.hpp"
+#include "src/core/include/context.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 
