@@ -7,6 +7,7 @@ find_package(Catch2 3 REQUIRED)
 set(TESTS_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/end_to_end.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/u_mat.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/u_settings.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/u_vec.cpp
 )
