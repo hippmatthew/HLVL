@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21.0)
 
 project(HLVL
-  VERSION 0.84.0
+  VERSION 0.85.0
   LANGUAGES CXX
 )
 
