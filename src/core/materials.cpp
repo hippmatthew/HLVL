@@ -121,14 +121,25 @@ Material::MaterialBuilder Material::builder(std::string tag) {
 std::vector<char> Material::read(std::string path) const {
   std::vector<char> buffer;
 
-  std::ifstream shader(path, std::ios::binary);
-  if (shader.fail()) return buffer;
+  std::ifstream shader(path, std::ios::binary | std::ios::ate);
+  if (!shader) throw std::runtime_error("hlvl: failed to parse shader");
 
   unsigned long size = shader.tellg();
   buffer.resize(size);
 
+  if (size < 4)
+    throw std::runtime_error("hlvl: shader file too small");
+
+  if (size % 4 != 0)
+    throw std::runtime_error("hlvl: shader file size not a multiple of 4");
+
   shader.seekg(0);
-  shader.read(buffer.data(), size);
+  shader.read(buffer.data(), 4);
+
+  if (*reinterpret_cast<unsigned int *>(buffer.data()) != 0x07230203)
+    throw std::runtime_error("hlvl: invalid shader file format");
+
+  shader.read(buffer.data() + 4, size - 4);
 
   return buffer;
 }

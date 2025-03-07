@@ -23,17 +23,17 @@ BufferBuilder& BufferBuilder::new_buffer(unsigned int size, vk::BufferUsageFlags
 
 void BufferBuilder::allocate(vk::MemoryPropertyFlags flags) {
   vk::DeviceSize allocationSize = 0;
-  unsigned int filter = 0x0;
+  unsigned int filter = ~(0x0);
 
   for (const auto& buffer : buffers) {
-    offsets.emplace_back(allocationSize);
     vk::MemoryRequirements requirements = buffer.getMemoryRequirements();
 
-    if (allocationSize % requirements.alignment != 0)
-      ++allocationSize;
+    unsigned int offset =
+      (allocationSize + requirements.alignment - 1) / requirements.alignment * requirements.alignment;
+    offsets.emplace_back(offset);
 
-    filter |= requirements.memoryTypeBits;
-    allocationSize += requirements.size;
+    filter &= requirements.memoryTypeBits;
+    allocationSize = offset + requirements.size;
   }
 
   vk::MemoryAllocateInfo allocateInfo{
@@ -64,8 +64,11 @@ unsigned int BufferBuilder::findMemoryIndex(unsigned int filter, vk::MemoryPrope
 
   unsigned int index = 0;
   for (const auto& memoryType : properties.memoryTypes) {
-    if ((filter & (1 << index)) && (memoryType.propertyFlags & flags) == flags)
+    if (index == properties.memoryTypeCount) break;
+
+    if ((filter & (1 << index)) && ((memoryType.propertyFlags & flags) == flags))
       return index;
+    ++index;
   }
 
   throw std::runtime_error("hlvl: failed to find a suitable memory index for buffer memory allocation");

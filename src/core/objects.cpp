@@ -92,9 +92,10 @@ Object::Object(Object::ObjectBuilder& objectBuilder) {
 
   vk::raii::Fence transferFence = Context::device().createFence(vk::FenceCreateInfo{});
 
-  Context::queue(Transfer).submit(transferSubmit);
+  Context::queue(Transfer).submit(transferSubmit, transferFence);
 
-  static_cast<void>(Context::device().waitForFences(*transferFence, true, UINT64_MAX));
+  if (Context::device().waitForFences(*transferFence, true, 1000000000ul) != vk::Result::eSuccess)
+    throw std::runtime_error("hlvl: hung waiting for buffer transfer");
 }
 
 Object::ObjectBuilder Object::builder() {
