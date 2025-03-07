@@ -1,10 +1,13 @@
 #include "src/core/include/context.hpp"
 #include "src/core/include/materials.hpp"
+#include "src/core/include/objects.hpp"
 #include "src/core/include/settings.hpp"
 
 #include <stdexcept>
 
 namespace hlvl {
+
+Context * Context::p_context = nullptr;
 
 Context::Context() {
   if (p_context != nullptr)
@@ -20,10 +23,12 @@ Context::Context() {
 }
 
 Context::~Context() {
+  Objects::destroy();
+  Materials::destroy();
+
   glfwDestroyWindow(gl_window);
   glfwTerminate();
 
-  Materials::destroy();
   Settings::destroy();
 }
 
@@ -45,6 +50,46 @@ const vk::raii::PhysicalDevice& Context::physicalDevice() {
 
 const vk::raii::Device& Context::device() {
   return p_context->vk_device;
+}
+
+const unsigned int& Context::queueIndex(QueueFamilyType type) {
+  switch (type) {
+    case Main:
+      return p_context->qfMap[type].index;
+    case Sparse:
+    case Async:
+      if (p_context->qfMap.find(type) == p_context->qfMap.end())
+        return p_context->qfMap[Main].index;
+      return p_context->qfMap[type].index;
+    case Compute:
+    case Transfer:
+      if (p_context->qfMap.find(type) == p_context->qfMap.end()) {
+        if (p_context->qfMap.find(Async) == p_context->qfMap.end())
+          return p_context->qfMap[Main].index;
+        return p_context->qfMap[Async].index;
+      }
+      return p_context->qfMap[type].index;
+  }
+}
+
+const vk::raii::Queue& Context::queue(QueueFamilyType type) {
+  switch (type) {
+    case Main:
+      return p_context->qfMap[type].vk_queue;
+    case Sparse:
+    case Async:
+      if (p_context->qfMap.find(type) == p_context->qfMap.end())
+        return p_context->qfMap[Main].vk_queue;
+      return p_context->qfMap[type].vk_queue;
+    case Compute:
+    case Transfer:
+      if (p_context->qfMap.find(type) == p_context->qfMap.end()) {
+        if (p_context->qfMap.find(Async) == p_context->qfMap.end())
+          return p_context->qfMap[Main].vk_queue;
+        return p_context->qfMap[Async].vk_queue;
+      }
+      return p_context->qfMap[type].vk_queue;
+  }
 }
 
 Context::QueueFamilies Context::getQueueFamilies(const vk::raii::PhysicalDevice& gpu) const {

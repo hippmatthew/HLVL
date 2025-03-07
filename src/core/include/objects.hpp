@@ -2,6 +2,8 @@
 
 #include "src/core/include/vertex.hpp"
 
+#define hlvl_objects hlvl::Objects::instance()
+
 namespace hlvl {
 
 class Object {
@@ -27,7 +29,7 @@ class Object {
         ObjectBuilder& add_material(std::string);
 
       private:
-        std::string material;
+        std::string material = "";
         std::vector<Vertex> vertices;
         std::vector<unsigned int> indices;
     };
@@ -35,19 +37,27 @@ class Object {
   public:
     Object() = delete;
     Object(Object&) = delete;
-    Object(Object&&) = delete;
+    Object(Object&&) = default;
     Object(ObjectBuilder&);
 
     ~Object() = default;
 
     Object& operator = (Object&) = delete;
-    Object& operator = (Object&&) = delete;
+    Object& operator = (Object&&) = default;
+
+    static ObjectBuilder builder();
+
+    #ifdef hlvl_tests
+
+      const vk::raii::DeviceMemory& get_memory() const { return vk_memory; }
+      const std::vector<vk::raii::Buffer>& get_buffers() const { return vk_buffers; }
+
+    #endif // hlvl_tests
 
   private:
-    vk::DeviceMemory vk_memory = nullptr;
-    vk::Buffer vk_vBuffer = nullptr;
-    vk::Buffer vk_iBuffer = nullptr;
-    unsigned int iBufferOffset = 0;
+    std::string materialTag = "";
+    vk::raii::DeviceMemory vk_memory = nullptr;
+    std::vector<vk::raii::Buffer> vk_buffers;
 };
 
 class Objects {
@@ -61,13 +71,22 @@ class Objects {
     static Objects& instance();
     static void destroy();
 
-    void count() const;
+    unsigned int count() const;
     void add(Object::ObjectBuilder&);
+
+    #ifdef hlvl_tests
+
+      const Object& get_object(unsigned int index) const { return objects[index]; }
+
+    #endif // hlvl_tests
+
+  private:
+    Objects() = default;
+    ~Objects() = default;
 
   private:
     static Objects * p_objects;
     std::vector<Object> objects;
-
 };
 
 } // namespace hlvl

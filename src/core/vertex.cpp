@@ -2,6 +2,10 @@
 
 namespace hlvl {
 
+Vertex::Vertex(la::vec<3> v) {
+  position = v;
+}
+
 vk::VertexInputBindingDescription Vertex::binding() {
   return vk::VertexInputBindingDescription{
     .binding    = 0,

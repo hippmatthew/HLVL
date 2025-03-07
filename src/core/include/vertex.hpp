@@ -15,6 +15,7 @@ class Vertex {
     Vertex() = default;
     Vertex(const Vertex&) = default;
     Vertex(Vertex&&) = default;
+    Vertex(la::vec<3>);
 
     ~Vertex() = default;
 

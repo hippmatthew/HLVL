@@ -62,16 +62,16 @@ Material::Material(MaterialBuilder& materialBuilder) {
   };
 
   vk::PipelineMultisampleStateCreateInfo ci_multisample{
-    .sampleShadingEnable  = false,
-    .rasterizationSamples = vk::SampleCountFlagBits::e1
+    .rasterizationSamples = vk::SampleCountFlagBits::e1,
+    .sampleShadingEnable  = false
   };
 
   vk::PipelineColorBlendAttachmentState colorAttachment{
+    .blendEnable    = false,
     .colorWriteMask = vk::ColorComponentFlagBits::eR |
                       vk::ColorComponentFlagBits::eG |
                       vk::ColorComponentFlagBits::eB |
-                      vk::ColorComponentFlagBits::eA,
-    .blendEnable    = false
+                      vk::ColorComponentFlagBits::eA
   };
 
   vk::PipelineColorBlendStateCreateInfo ci_blend{
@@ -183,7 +183,7 @@ void Materials::create(Material::MaterialBuilder& materialBuilder) {
   if (materialMap.find(materialBuilder.tag) != materialMap.end())
     throw std::runtime_error("hlvl: material already exists with tag: " + materialBuilder.tag);
 
-  materialMap.emplace(materialBuilder.tag, Material(materialBuilder));
+  materialMap.emplace(std::make_pair(materialBuilder.tag, Material(materialBuilder)));
 }
 
 } // namespace hlvl

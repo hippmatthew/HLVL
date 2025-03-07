@@ -26,12 +26,15 @@ enum QueueFamilyType {
 };
 
 struct QueueFamily {
-  unsigned int index;
-  vk::raii::Queue vk_queue;
+  unsigned int index = -1;
+  vk::raii::Queue vk_queue = nullptr;
 };
 
 class Context {
+  friend class BufferBuilder;
+  friend class CommandBufferBuilder;
   friend class Material;
+  friend class Object;
 
   using QueueFamilies = std::map<QueueFamilyType, QueueFamily>;
 
@@ -63,6 +66,8 @@ class Context {
     static const vk::raii::Device& device();
     static const vk::raii::PhysicalDevice& physicalDevice();
     static const vk::raii::SurfaceKHR& surface();
+    static const unsigned int& queueIndex(QueueFamilyType);
+    static const vk::raii::Queue& queue(QueueFamilyType);
 
     QueueFamilies getQueueFamilies(const vk::raii::PhysicalDevice&) const;
     unsigned int typeIndex(vk::PhysicalDeviceType) const;

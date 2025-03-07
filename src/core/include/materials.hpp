@@ -37,14 +37,15 @@ class Material {
     };
 
   public:
+    Material() = delete;
     Material(Material&) = delete;
-    Material(Material&&) = delete;
+    Material(Material&&) = default;
     Material(MaterialBuilder&);
 
     ~Material() = default;
 
     Material& operator = (Material&) = delete;
-    Material& operator = (Material&&) = delete;
+    Material& operator = (Material&&) = default;
 
     static MaterialBuilder builder(std::string);
 
