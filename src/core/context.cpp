@@ -35,6 +35,10 @@ Context::~Context() {
   Settings::destroy();
 }
 
+void Context::close() {
+  closeRequested = true;
+}
+
 GLFWwindow * Context::window() {
   return p_context->gl_window;
 }
@@ -317,7 +321,7 @@ void Context::createDevice(bool portability) {
 }
 
 bool Context::shouldClose() {
-  return glfwWindowShouldClose(gl_window);
+  return glfwWindowShouldClose(gl_window) || closeRequested;
 }
 
 void Context::pollEvents() {

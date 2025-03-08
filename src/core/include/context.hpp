@@ -51,19 +51,21 @@ class Context {
     Context& operator = (Context&) = delete;
     Context& operator = (Context&&) = delete;
 
-    void run(bool close_condition = false) {
-      run([](){}, close_condition);
+    void run() {
+      run([](){});
     }
 
     template <typename Func>
-    void run(Func&& code, bool close_condition = false) {
-      while (!(close_condition || shouldClose())) {
+    void run(Func&& code) {
+      while (!shouldClose()) {
         pollEvents();
         code();
         renderer.render();
       }
       vk_device.waitIdle();
     }
+
+    void close();
 
     #ifdef hlvl_tests
 
@@ -104,10 +106,11 @@ class Context {
     vk::raii::SurfaceKHR vk_surface = nullptr;
     vk::raii::PhysicalDevice vk_physicalDevice = nullptr;
     vk::raii::Device vk_device = nullptr;
-
     QueueFamilies qfMap;
+
     Renderer renderer;
 
+    bool closeRequested = false;
     std::vector<const char *> deviceExtensions = {
       VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
       VK_KHR_SWAPCHAIN_EXTENSION_NAME

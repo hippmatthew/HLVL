@@ -36,10 +36,33 @@ TEST_CASE( "end_to_end", "[endtoend]" ) {
       .add_material("triangle")
   );
 
-  REQUIRE( hlvl_objects.count() != 0 );
+  REQUIRE( hlvl_objects.count() ==  1 );
   CHECK( *hlvl_objects.get_object(0).get_memory() != nullptr );
   for (const auto& buffer : hlvl_objects.get_object(0).get_buffers())
     CHECK( *buffer != nullptr );
 
-  context.run();
+  hlvl_objects.add(
+    hlvl::Object::builder()
+      .add_vertices({
+        {{ 0.8, -0.8, 0.0 }},
+        {{ 0.8, -0.7, 0.0 }},
+        {{ 0.7, -0.7, 0.0 }},
+        {{ 0.7, -0.8, 0.0 }}
+      })
+      .add_indices({ 0, 3, 2, 2, 1, 0 })
+      .add_material("triangle")
+  );
+
+  REQUIRE( hlvl_objects.count() == 2 );
+  CHECK( *hlvl_objects.get_object(0).get_memory() != nullptr );
+  for (const auto& buffer : hlvl_objects.get_object(0).get_buffers())
+    CHECK( *buffer != nullptr );
+
+  unsigned int counter = 0;
+  context.run([&context, &counter]() {
+    if (++counter == 5)
+      context.close();
+  });
+
+  CHECK( counter == 5 );
 }
