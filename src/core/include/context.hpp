@@ -1,5 +1,7 @@
 #pragma once
 
+#include "src/core/include/renderer.hpp"
+
 #define VULKAN_HPP_NO_CONSTRUCTORS
 #include <vulkan/vulkan_raii.hpp>
 #include <vulkan/vulkan_beta.h>
@@ -9,10 +11,10 @@
 
 #include <map>
 
-#define hlvl_vulkan_version VK_MAKE_API_VERSION(1, 4, 304, 0)
+#define hlvl_vulkan_version VK_MAKE_API_VERSION(1, 3, 296, 0)
 
-#define hlvl_loop_start mainloop: hlvl::Context::poll_events();
-#define hlvl_loop_end(c) if(!(hlvl::Context::should_close() || (c))) goto mainloop;
+#define hlvl_loop_start() mainloop: hlvl::Context::poll_events();
+#define hlvl_loop_end(c) hlvl::Context::render(); if(!(hlvl::Context::should_close() || (c))) goto mainloop;
 
 namespace hlvl
 {
@@ -35,6 +37,7 @@ class Context {
   friend class CommandBufferBuilder;
   friend class Material;
   friend class Object;
+  friend class Renderer;
 
   using QueueFamilies = std::map<QueueFamilyType, QueueFamily>;
 
@@ -45,11 +48,22 @@ class Context {
 
     ~Context();
 
-    Context& operator=(Context&) = delete;
-    Context& operator=(Context&&) = delete;
+    Context& operator = (Context&) = delete;
+    Context& operator = (Context&&) = delete;
 
-    static void poll_events();
-    static bool should_close();
+    void run(bool close_condition = false) {
+      run([](){}, close_condition);
+    }
+
+    template <typename Func>
+    void run(Func&& code, bool close_condition = false) {
+      while (!(close_condition || shouldClose())) {
+        pollEvents();
+        code();
+        renderer.render();
+      }
+      vk_device.waitIdle();
+    }
 
     #ifdef hlvl_tests
 
@@ -63,9 +77,10 @@ class Context {
     #endif // hlvl_tests
 
   private:
-    static const vk::raii::Device& device();
-    static const vk::raii::PhysicalDevice& physicalDevice();
+    static GLFWwindow * window();
     static const vk::raii::SurfaceKHR& surface();
+    static const vk::raii::PhysicalDevice& physicalDevice();
+    static const vk::raii::Device& device();
     static const unsigned int& queueIndex(QueueFamilyType);
     static const vk::raii::Queue& queue(QueueFamilyType);
 
@@ -77,6 +92,8 @@ class Context {
     void createSurface();
     void chooseGPU();
     void createDevice(bool);
+    bool shouldClose();
+    void pollEvents();
 
   private:
     static Context * p_context;
@@ -89,6 +106,7 @@ class Context {
     vk::raii::Device vk_device = nullptr;
 
     QueueFamilies qfMap;
+    Renderer renderer;
 
     std::vector<const char *> deviceExtensions = {
       VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,

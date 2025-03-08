@@ -14,9 +14,14 @@
   (patch) \
 )
 
-#define hlvl_engine_version hlvl_make_version(0, 86, 3)
+#define hlvl_engine_version hlvl_make_version(0, 88, 1)
 
 namespace hlvl {
+
+enum BufferMode {
+  DoubleBuffer = 2,
+  TripleBuffer = 3
+};
 
 class Settings {
   public:
@@ -42,11 +47,12 @@ class Settings {
     std::string application_name = "HLVL Application";
     unsigned int application_version = hlvl_make_version(1, 0, 0);
 
-    unsigned int max_flight_frames = 2;
+    BufferMode buffer_mode = TripleBuffer;
     vk::Format format = vk::Format::eB8G8R8A8Srgb;
     vk::ColorSpaceKHR color_space = vk::ColorSpaceKHR::eSrgbNonlinear;
     vk::PresentModeKHR present_mode = vk::PresentModeKHR::eMailbox;
     vk::Extent2D extent = vk::Extent2D{ 1280, 720 };
+    std::array<float, 4> background_color = { 0.0, 0.0, 0.0, 1.0 };
 
   private:
     static Settings * p_settings;

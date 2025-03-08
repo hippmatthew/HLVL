@@ -13,6 +13,7 @@ namespace hlvl {
 
 class Material {
   friend class Materials;
+  friend class Renderer;
 
   private:
     class MaterialBuilder {

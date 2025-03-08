@@ -2,6 +2,7 @@
 #include "src/core/include/materials.hpp"
 #include "src/core/include/objects.hpp"
 #include "src/core/include/settings.hpp"
+#include "vulkan/vulkan_core.h"
 
 #include <stdexcept>
 
@@ -20,6 +21,8 @@ Context::Context() {
   createSurface();
   chooseGPU();
   createDevice(portability);
+
+  renderer.init();
 }
 
 Context::~Context() {
@@ -32,12 +35,8 @@ Context::~Context() {
   Settings::destroy();
 }
 
-void Context::poll_events() {
-  glfwPollEvents();
-}
-
-bool Context::should_close() {
-  return glfwWindowShouldClose(p_context->gl_window);
+GLFWwindow * Context::window() {
+  return p_context->gl_window;
 }
 
 const vk::raii::SurfaceKHR& Context::surface() {
@@ -219,7 +218,7 @@ void Context::createSurface() {
     throw std::runtime_error("hlvl: failed to create window surface");
 
   vk_surface = vk::raii::SurfaceKHR(vk_instance, surface);
-  if (vk_surface == nullptr)
+  if (*vk_surface == nullptr)
     throw std::runtime_error("hlvl: failed to create window surface");
 }
 
@@ -272,7 +271,7 @@ void Context::chooseGPU() {
     }
   }
 
-  if (vk_physicalDevice == nullptr)
+  if (*vk_physicalDevice == nullptr)
     throw std::runtime_error("hlvl: failed to find suitable gpu");
 }
 
@@ -315,6 +314,14 @@ void Context::createDevice(bool portability) {
 
   for (auto& [_, family] : qfMap)
     family.vk_queue = vk_device.getQueue(family.index, 0);
+}
+
+bool Context::shouldClose() {
+  return glfwWindowShouldClose(gl_window);
+}
+
+void Context::pollEvents() {
+  glfwPollEvents();
 }
 
 } // namespace hlvl

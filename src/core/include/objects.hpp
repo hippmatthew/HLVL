@@ -8,6 +8,7 @@ namespace hlvl {
 
 class Object {
   friend class Objects;
+  friend class Renderer;
 
   private:
     class ObjectBuilder {
@@ -56,6 +57,8 @@ class Object {
 
   private:
     std::string materialTag = "";
+    unsigned int indexCount = 0;
+
     vk::raii::DeviceMemory vk_memory = nullptr;
     std::vector<vk::raii::Buffer> vk_buffers;
 };
@@ -70,6 +73,9 @@ class Objects {
 
     static Objects& instance();
     static void destroy();
+
+    std::vector<Object>::const_iterator begin() const;
+    std::vector<Object>::const_iterator end() const;
 
     unsigned int count() const;
     void add(Object::ObjectBuilder&);

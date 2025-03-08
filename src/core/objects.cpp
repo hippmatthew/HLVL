@@ -32,6 +32,9 @@ Object::Object(Object::ObjectBuilder& objectBuilder) {
   if (objectBuilder.material == "")
     throw std::runtime_error("hlvl: object builder must contain a material");
 
+  indexCount = objectBuilder.indices.size();
+  materialTag = objectBuilder.material;
+
   unsigned int vertexSize = objectBuilder.vertices.size() * sizeof(Vertex);
   unsigned int indexSize = objectBuilder.indices.size() * sizeof(unsigned int);
 
@@ -95,7 +98,7 @@ Object::Object(Object::ObjectBuilder& objectBuilder) {
   Context::queue(Transfer).submit(transferSubmit, transferFence);
 
   if (Context::device().waitForFences(*transferFence, true, 1000000000ul) != vk::Result::eSuccess)
-    throw std::runtime_error("hlvl: hung waiting for buffer transfer");
+    throw std::runtime_error("hlvl: hung waiting for transfer fence");
 }
 
 Object::ObjectBuilder Object::builder() {
@@ -114,6 +117,14 @@ void Objects::destroy() {
 
   delete p_objects;
   p_objects = nullptr;
+}
+
+std::vector<Object>::const_iterator Objects::begin() const {
+  return objects.begin();
+}
+
+std::vector<Object>::const_iterator Objects::end() const {
+  return objects.end();
 }
 
 unsigned int Objects::count() const {
