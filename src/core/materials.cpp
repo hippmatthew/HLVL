@@ -1,3 +1,4 @@
+#include "include/vkbuilders.hpp"
 #include "src/core/include/context.hpp"
 #include "src/core/include/materials.hpp"
 #include "src/core/include/settings.hpp"
@@ -18,8 +19,74 @@ Material::MaterialBuilder& Material::MaterialBuilder::add_shader(vk::ShaderStage
   return *this;
 }
 
+Material::MaterialBuilder& Material::MaterialBuilder::add_resource(ResourceInfo&& info) {
+  resources.emplace_back(info);
+  info.type == Uniform ? ++uniformCount : ++storageCount;
+  return *this;
+}
+
 Material::Material(MaterialBuilder& materialBuilder) {
-  auto [modules, ci_stages] = processShaders(materialBuilder);
+  createGraphicsPipeline(materialBuilder);
+  createDescriptors(materialBuilder);
+  createDescriptorSets(materialBuilder);
+}
+
+Material::MaterialBuilder Material::builder(std::string tag) {
+  return MaterialBuilder(tag);
+}
+
+std::vector<char> Material::read(std::string path) const {
+  std::vector<char> buffer;
+
+  std::ifstream shader(path, std::ios::binary | std::ios::ate);
+  if (!shader) throw std::runtime_error("hlvl: failed to parse shader");
+
+  unsigned long size = shader.tellg();
+  buffer.resize(size);
+
+  if (size < 4)
+    throw std::runtime_error("hlvl: shader file too small");
+
+  if (size % 4 != 0)
+    throw std::runtime_error("hlvl: shader file size not a multiple of 4");
+
+  shader.seekg(0);
+  shader.read(buffer.data(), 4);
+
+  if (*reinterpret_cast<unsigned int *>(buffer.data()) != 0x07230203)
+    throw std::runtime_error("hlvl: invalid shader file format");
+
+  shader.read(buffer.data() + 4, size - 4);
+
+  return buffer;
+}
+
+std::pair<std::vector<vk::raii::ShaderModule>, std::vector<vk::PipelineShaderStageCreateInfo>>
+Material::processShaders(MaterialBuilder& b) const {
+  std::vector<vk::raii::ShaderModule> modules;
+  std::vector<vk::PipelineShaderStageCreateInfo> infos;
+
+  for (auto& [stage, path] : b.shaderMap) {
+    std::vector<char> code = read(path);
+    vk::ShaderModuleCreateInfo ci_module{
+      .codeSize = static_cast<unsigned int>(code.size()),
+      .pCode    = reinterpret_cast<unsigned int *>(code.data())
+    };
+
+    modules.emplace_back(Context::device().createShaderModule(ci_module));
+
+    infos.emplace_back(vk::PipelineShaderStageCreateInfo{
+      .stage  = stage,
+      .module = modules[modules.size() - 1],
+      .pName  = "main"
+    });
+  }
+
+  return std::make_pair(std::move(modules), std::move(infos));
+}
+
+void Material::createGraphicsPipeline(MaterialBuilder& materialBuilder) {
+    auto [modules, ci_stages] = processShaders(materialBuilder);
 
   vk::DynamicState dynamicStates[2] = {
     vk::DynamicState::eViewport,
@@ -80,11 +147,30 @@ Material::Material(MaterialBuilder& materialBuilder) {
     .pAttachments     = &colorAttachment
   };
 
-  // descriptor sets and push constants
+  std::vector<vk::DescriptorSetLayoutBinding> bindings;
+  unsigned int index = 0;
+  for (const auto& resource : materialBuilder.resources) {
+    bindings.emplace_back(vk::DescriptorSetLayoutBinding{
+      .binding          = index++,
+      .descriptorType   = resource.type == Uniform ?
+                            vk::DescriptorType::eUniformBuffer : vk::DescriptorType::eStorageBuffer,
+      .descriptorCount  = 1,
+      .stageFlags       = resource.stages
+    });
+  }
+
+  vk::DescriptorSetLayoutCreateInfo ci_dsLayout{
+    .bindingCount = static_cast<unsigned int>(bindings.size()),
+    .pBindings    = bindings.data()
+  };
+
+  vk_dsLayout = Context::device().createDescriptorSetLayout(ci_dsLayout);
+
+  // push constants
 
   vk::PipelineLayoutCreateInfo ci_layout{
-    .setLayoutCount         = 0,
-    .pSetLayouts            = nullptr,
+    .setLayoutCount         = 1,
+    .pSetLayouts            = &*vk_dsLayout,
     .pushConstantRangeCount = 0,
     .pPushConstantRanges    = nullptr
   };
@@ -114,58 +200,67 @@ Material::Material(MaterialBuilder& materialBuilder) {
   vk_gPipeline = Context::device().createGraphicsPipeline(nullptr, ci_gPipeline);
 }
 
-Material::MaterialBuilder Material::builder(std::string tag) {
-  return MaterialBuilder(tag);
-}
+void Material::createDescriptors(MaterialBuilder& materialBuilder) {
+  BufferBuilder bufferBuilder;
 
-std::vector<char> Material::read(std::string path) const {
-  std::vector<char> buffer;
-
-  std::ifstream shader(path, std::ios::binary | std::ios::ate);
-  if (!shader) throw std::runtime_error("hlvl: failed to parse shader");
-
-  unsigned long size = shader.tellg();
-  buffer.resize(size);
-
-  if (size < 4)
-    throw std::runtime_error("hlvl: shader file too small");
-
-  if (size % 4 != 0)
-    throw std::runtime_error("hlvl: shader file size not a multiple of 4");
-
-  shader.seekg(0);
-  shader.read(buffer.data(), 4);
-
-  if (*reinterpret_cast<unsigned int *>(buffer.data()) != 0x07230203)
-    throw std::runtime_error("hlvl: invalid shader file format");
-
-  shader.read(buffer.data() + 4, size - 4);
-
-  return buffer;
-}
-
-std::pair<std::vector<vk::raii::ShaderModule>, std::vector<vk::PipelineShaderStageCreateInfo>>
-Material::processShaders(MaterialBuilder& b) const {
-  std::vector<vk::raii::ShaderModule> modules;
-  std::vector<vk::PipelineShaderStageCreateInfo> infos;
-
-  for (auto& [stage, path] : b.shaderMap) {
-    std::vector<char> code = read(path);
-    vk::ShaderModuleCreateInfo ci_module{
-      .codeSize = static_cast<unsigned int>(code.size()),
-      .pCode    = reinterpret_cast<unsigned int *>(code.data())
-    };
-
-    modules.emplace_back(Context::device().createShaderModule(ci_module));
-
-    infos.emplace_back(vk::PipelineShaderStageCreateInfo{
-      .stage  = stage,
-      .module = modules[modules.size() - 1],
-      .pName  = "main"
-    });
+  for (unsigned int i = 0; i < hlvl_settings.buffer_mode; ++i) {
+    for (const auto& resource : materialBuilder.resources)
+      bufferBuilder.new_buffer(resource.resource->size, static_cast<vk::BufferUsageFlagBits>(resource.type));
   }
 
-  return std::make_pair(std::move(modules), std::move(infos));
+  bufferBuilder.allocate(vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+
+  vk_memory = bufferBuilder.retrieve_memory();
+  vk_buffers = bufferBuilder.retrieve_buffers();
+  std::vector<unsigned int> offsets = bufferBuilder.retrieve_offsets();
+
+  void * memoryMap = vk_memory.mapMemory(0, bufferBuilder.allocation_size());
+  unsigned int index = 0;
+  for (auto& resource : materialBuilder.resources) {
+    resource.resource->memoryMap = memoryMap;
+
+    for (int i = 0; i < hlvl_settings.buffer_mode; ++i)
+      resource.resource->offsets.emplace_back(offsets[i * materialBuilder.resources.size() + index]);
+    resource.resource->initialize();
+
+    ++index;
+  }
+}
+
+void Material::createDescriptorSets(MaterialBuilder& materialBuilder) {
+  DescriptorSetBuilder dsBuilder(
+    vk_dsLayout,
+    vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
+    materialBuilder.storageCount,
+    materialBuilder.uniformCount
+  );
+  vk_descriptorPool = dsBuilder.retrieve_pool();
+  vk_descriptorSets = dsBuilder.retrieve_sets();
+
+  std::vector<vk::WriteDescriptorSet> writes;
+  unsigned int index = 0;
+  for (const auto& resource : materialBuilder.resources) {
+    for (unsigned int i = 0; i < hlvl_settings.buffer_mode; ++i) {
+      vk::DescriptorBufferInfo bufferInfo{
+        .buffer = vk_buffers[i * materialBuilder.resources.size() + index],
+        .offset = 0,
+        .range = resource.resource->size
+      };
+
+      writes.emplace_back(vk::WriteDescriptorSet{
+        .dstSet           = vk_descriptorSets[i],
+        .dstBinding       = index,
+        .dstArrayElement  = 0,
+        .descriptorCount  = 1,
+        .descriptorType   = resource.type == Uniform ?
+                              vk::DescriptorType::eUniformBuffer : vk::DescriptorType::eStorageBuffer,
+        .pBufferInfo      = &bufferInfo
+      });
+    }
+    ++index;
+  }
+
+  Context::device().updateDescriptorSets(writes, nullptr);
 }
 
 const Material& Materials::operator [] (std::string tag) const {

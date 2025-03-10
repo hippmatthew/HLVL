@@ -257,6 +257,14 @@ void Renderer::renderObject(const Object& object) {
 
   vk_commandBuffers[frameIndex].bindPipeline(vk::PipelineBindPoint::eGraphics, material.vk_gPipeline);
 
+  vk_commandBuffers[frameIndex].bindDescriptorSets(
+    vk::PipelineBindPoint::eGraphics,
+    material.vk_gLayout,
+    0,
+    *material.vk_descriptorSets[frameIndex],
+    nullptr
+  );
+
   vk_commandBuffers[frameIndex].bindVertexBuffers(0, *object.vk_buffers[0], { 0 });
   vk_commandBuffers[frameIndex].bindIndexBuffer(*object.vk_buffers[1], 0, vk::IndexType::eUint32);
 

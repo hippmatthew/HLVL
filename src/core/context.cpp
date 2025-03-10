@@ -2,7 +2,6 @@
 #include "src/core/include/materials.hpp"
 #include "src/core/include/objects.hpp"
 #include "src/core/include/settings.hpp"
-#include "vulkan/vulkan_core.h"
 
 #include <stdexcept>
 
@@ -93,6 +92,10 @@ const vk::raii::Queue& Context::queue(QueueFamilyType type) {
       }
       return p_context->qfMap[type].vk_queue;
   }
+}
+
+const unsigned int& Context::frameIndex() {
+  return p_context->renderer.frameIndex;
 }
 
 Context::QueueFamilies Context::getQueueFamilies(const vk::raii::PhysicalDevice& gpu) const {

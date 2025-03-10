@@ -5,7 +5,13 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <chrono>
+
 TEST_CASE( "end_to_end", "[endtoend]" ) {
+  struct testUniform {
+    la::vec<3> color = { 0.0, 1.0, 0.0 };
+  };
+
   hlvl::Context context;
 
   REQUIRE( context.get_window() != nullptr );
@@ -15,10 +21,17 @@ TEST_CASE( "end_to_end", "[endtoend]" ) {
   REQUIRE( *context.get_device() != nullptr );
   REQUIRE( !context.get_queueFamilies().empty() );
 
+  hlvl::Resource test(testUniform{});
+
   hlvl_materials.create(
     hlvl::Material::builder("triangle")
       .add_shader(vk::ShaderStageFlagBits::eVertex, "shaders/triangle.vert.spv")
       .add_shader(vk::ShaderStageFlagBits::eFragment, "shaders/triangle.frag.spv")
+      .add_resource({
+        .type = hlvl::Uniform,
+        .stages = vk::ShaderStageFlagBits::eFragment,
+        .resource = &test
+      })
   );
 
   REQUIRE( hlvl_materials.count() != 0 );
@@ -58,11 +71,21 @@ TEST_CASE( "end_to_end", "[endtoend]" ) {
   for (const auto& buffer : hlvl_objects.get_object(0).get_buffers())
     CHECK( *buffer != nullptr );
 
-  unsigned int counter = 0;
-  context.run([&context, &counter]() {
-    if (++counter == 5)
-      context.close();
-  });
+  auto prevTime = std::chrono::steady_clock::now();
+  auto currTime = prevTime;
+  double elapsedTime = 0.0;
 
-  CHECK( counter == 5 );
+  context.run([&test, &prevTime, &currTime, &elapsedTime]() {
+    currTime = std::chrono::steady_clock::now();
+    elapsedTime += std::chrono::duration<double>(currTime - prevTime).count();
+    prevTime = currTime;
+
+    test = testUniform{
+      {
+        static_cast<float>(cos(1.25 * elapsedTime + 6.28 / 3) + 1),
+        static_cast<float>(cos(1.25 * elapsedTime) + 1),
+        static_cast<float>(cos(1.25 * elapsedTime + 2 * 6.28 / 3) + 1)
+      }
+    };
+  });
 }

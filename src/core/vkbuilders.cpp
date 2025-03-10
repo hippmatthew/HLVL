@@ -1,6 +1,11 @@
+#include "src/core/include/settings.hpp"
 #include "src/core/include/vkbuilders.hpp"
 
 namespace hlvl {
+
+unsigned int BufferBuilder::allocation_size() const {
+  return allocationSize;
+}
 
 BufferBuilder& BufferBuilder::clear() {
   offsets.clear();
@@ -11,9 +16,9 @@ BufferBuilder& BufferBuilder::clear() {
 
 BufferBuilder& BufferBuilder::new_buffer(unsigned int size, vk::BufferUsageFlags usage, vk::SharingMode sharing) {
   vk::BufferCreateInfo ci_buffer{
-    .size = size,
-    .usage = usage,
-    .sharingMode = sharing
+    .size         = size,
+    .usage        = usage,
+    .sharingMode  = sharing
   };
 
   buffers.emplace_back(Context::device().createBuffer(ci_buffer));
@@ -22,7 +27,6 @@ BufferBuilder& BufferBuilder::new_buffer(unsigned int size, vk::BufferUsageFlags
 }
 
 void BufferBuilder::allocate(vk::MemoryPropertyFlags flags) {
-  vk::DeviceSize allocationSize = 0;
   unsigned int filter = ~(0x0);
 
   for (const auto& buffer : buffers) {
@@ -37,8 +41,8 @@ void BufferBuilder::allocate(vk::MemoryPropertyFlags flags) {
   }
 
   vk::MemoryAllocateInfo allocateInfo{
-    .allocationSize = allocationSize,
-    .memoryTypeIndex = findMemoryIndex(filter, flags)
+    .allocationSize   = allocationSize,
+    .memoryTypeIndex  = findMemoryIndex(filter, flags)
   };
 
   memory = Context::device().allocateMemory(allocateInfo);
@@ -79,8 +83,8 @@ CommandBufferBuilder::CommandBufferBuilder(vk::CommandPoolCreateFlags flags, uns
 }
 
 void CommandBufferBuilder::new_pool(vk::CommandPoolCreateFlags flags, unsigned int count, QueueFamilyType type) {
-  buffers.clear();
   pool.clear();
+  buffers.clear();
 
   vk::CommandPoolCreateInfo ci_pool{
     .flags            = flags,
@@ -90,8 +94,8 @@ void CommandBufferBuilder::new_pool(vk::CommandPoolCreateFlags flags, unsigned i
   pool = Context::device().createCommandPool(ci_pool);
 
   vk::CommandBufferAllocateInfo allocateInfo{
-    .commandPool = pool,
-    .level = vk::CommandBufferLevel::ePrimary,
+    .commandPool        = pool,
+    .level              = vk::CommandBufferLevel::ePrimary,
     .commandBufferCount = count
   };
 
@@ -104,6 +108,70 @@ vk::raii::CommandPool&& CommandBufferBuilder::retrieve_pool() {
 
 vk::raii::CommandBuffers&& CommandBufferBuilder::retrieve_buffers() {
   return std::move(buffers);
+}
+
+DescriptorSetBuilder::DescriptorSetBuilder(
+  const vk::raii::DescriptorSetLayout& vk_dsLayout,
+  vk::DescriptorPoolCreateFlags flags,
+  unsigned int storages,
+  unsigned int uniforms
+) {
+  new_pool(vk_dsLayout, flags, storages, uniforms);
+}
+
+void DescriptorSetBuilder::new_pool(
+  const vk::raii::DescriptorSetLayout& vk_dsLayout,
+  vk::DescriptorPoolCreateFlags flags,
+  unsigned int storages,
+  unsigned int uniforms
+) {
+  pool.clear();
+  sets.clear();
+
+  std::vector<vk::DescriptorPoolSize> poolSizes;
+
+  if (storages != 0) {
+    poolSizes.emplace_back(vk::DescriptorPoolSize{
+      .type             = vk::DescriptorType::eStorageBuffer,
+      .descriptorCount  = storages
+    });
+  }
+
+  if (uniforms != 0) {
+    poolSizes.emplace_back(vk::DescriptorPoolSize{
+      .type             = vk::DescriptorType::eUniformBuffer,
+      .descriptorCount  = uniforms
+    });
+  }
+
+  vk::DescriptorPoolCreateInfo ci_pool{
+    .flags          = flags,
+    .maxSets        = hlvl_settings.buffer_mode,
+    .poolSizeCount  = static_cast<unsigned int>(poolSizes.size()),
+    .pPoolSizes     = poolSizes.data()
+  };
+
+  pool = Context::device().createDescriptorPool(ci_pool);
+
+  std::vector<vk::DescriptorSetLayout> layouts;
+  for (unsigned int i = 0; i < hlvl_settings.buffer_mode; ++i)
+    layouts.emplace_back(vk_dsLayout);
+
+  vk::DescriptorSetAllocateInfo setInfo{
+    .descriptorPool     = pool,
+    .descriptorSetCount = hlvl_settings.buffer_mode,
+    .pSetLayouts        = layouts.data()
+  };
+
+  sets = vk::raii::DescriptorSets(Context::device(), setInfo);
+}
+
+vk::raii::DescriptorPool&& DescriptorSetBuilder::retrieve_pool() {
+  return std::move(pool);
+}
+
+vk::raii::DescriptorSets&& DescriptorSetBuilder::retrieve_sets() {
+  return std::move(sets);
 }
 
 }

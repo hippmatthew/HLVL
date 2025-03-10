@@ -2,11 +2,9 @@
 
 #include "src/core/include/renderer.hpp"
 
-#define VULKAN_HPP_NO_CONSTRUCTORS
 #include <vulkan/vulkan_raii.hpp>
 #include <vulkan/vulkan_beta.h>
 
-#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
 #include <map>
@@ -32,12 +30,19 @@ struct QueueFamily {
   vk::raii::Queue vk_queue = nullptr;
 };
 
+template <typename T>
+class Resource;
+
 class Context {
   friend class BufferBuilder;
   friend class CommandBufferBuilder;
+  friend class DescriptorSetBuilder;
   friend class Material;
   friend class Object;
   friend class Renderer;
+
+  template <typename T>
+  friend class Resource;
 
   using QueueFamilies = std::map<QueueFamilyType, QueueFamily>;
 
@@ -85,6 +90,7 @@ class Context {
     static const vk::raii::Device& device();
     static const unsigned int& queueIndex(QueueFamilyType);
     static const vk::raii::Queue& queue(QueueFamilyType);
+    static const unsigned int& frameIndex();
 
     QueueFamilies getQueueFamilies(const vk::raii::PhysicalDevice&) const;
     unsigned int typeIndex(vk::PhysicalDeviceType) const;

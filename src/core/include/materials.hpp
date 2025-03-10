@@ -1,6 +1,7 @@
 #pragma once
 
-#define VULKAN_HPP_NO_CONSTRUCTORS
+#include "src/core/include/resource.hpp"
+
 #include <vulkan/vulkan_raii.hpp>
 #include <vulkan/vulkan_beta.h>
 
@@ -10,6 +11,17 @@
 #define hlvl_materials hlvl::Materials::instance()
 
 namespace hlvl {
+
+enum BufferType {
+  Uniform = static_cast<unsigned int>(vk::BufferUsageFlagBits::eUniformBuffer),
+  Storage = static_cast<unsigned int>(vk::BufferUsageFlagBits::eStorageBuffer)
+};
+
+struct ResourceInfo {
+  BufferType type = Uniform;
+  vk::ShaderStageFlags stages;
+  ResourceProxy * resource;
+};
 
 class Material {
   friend class Materials;
@@ -31,10 +43,14 @@ class Material {
         MaterialBuilder& operator = (MaterialBuilder&&) = delete;
 
         MaterialBuilder& add_shader(vk::ShaderStageFlagBits, std::string);
+        MaterialBuilder& add_resource(ResourceInfo&&);
 
       private:
         std::string tag;
         std::map<vk::ShaderStageFlagBits, std::string> shaderMap;
+        std::vector<ResourceInfo> resources;
+        unsigned int storageCount = 0;
+        unsigned int uniformCount = 0;
     };
 
   public:
@@ -64,9 +80,20 @@ class Material {
       std::vector<vk::PipelineShaderStageCreateInfo>
     > processShaders(MaterialBuilder&) const;
 
+    void createGraphicsPipeline(MaterialBuilder&);
+    void createDescriptors(MaterialBuilder&);
+    void createDescriptorSets(MaterialBuilder&);
+
   private:
     vk::raii::PipelineLayout vk_gLayout = nullptr;
     vk::raii::Pipeline vk_gPipeline = nullptr;
+
+    vk::raii::DeviceMemory vk_memory = nullptr;
+    std::vector<vk::raii::Buffer> vk_buffers;
+
+    vk::raii::DescriptorSetLayout vk_dsLayout = nullptr;
+    vk::raii::DescriptorPool vk_descriptorPool = nullptr;
+    vk::raii::DescriptorSets vk_descriptorSets = nullptr;
 };
 
 class Materials {

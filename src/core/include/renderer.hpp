@@ -1,9 +1,7 @@
 #pragma once
 
 #include "src/core/include/objects.hpp"
-#include "vulkan/vulkan_enums.hpp"
 
-#define VULKAN_HPP_NO_CONSTRUCTORS
 #include <vulkan/vulkan_raii.hpp>
 #include <vulkan/vulkan_beta.h>
 

@@ -1,6 +1,5 @@
 #pragma once
 
-#define VULKAN_HPP_NO_CONTRUCTORS
 #include <vulkan/vulkan_raii.hpp>
 #include <vulkan/vulkan_beta.h>
 
@@ -14,7 +13,7 @@
   (patch) \
 )
 
-#define hlvl_engine_version hlvl_make_version(0, 89, 0)
+#define hlvl_engine_version hlvl_make_version(0, 94, 1)
 
 namespace hlvl {
 

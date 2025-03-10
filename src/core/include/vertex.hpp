@@ -2,7 +2,6 @@
 
 #include "src/linalg/include/vec.hpp"
 
-#define VULKAN_HPP_NO_CONSTRUCTORS
 #include <vulkan/vulkan_raii.hpp>
 #include <vulkan/vulkan_beta.h>
 

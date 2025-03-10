@@ -2,8 +2,8 @@
 
 #include "src/core/include/context.hpp"
 
-#define VULKAN_HPP_NO_CONSTRUCTORS
 #include <vulkan/vulkan_raii.hpp>
+#include <vulkan/vulkan_beta.h>
 
 #include <vector>
 
@@ -19,6 +19,8 @@ class BufferBuilder {
 
     BufferBuilder& operator = (BufferBuilder&) = delete;
     BufferBuilder& operator = (BufferBuilder&&) = delete;
+
+    unsigned int allocation_size() const;
 
     BufferBuilder& clear();
     BufferBuilder& new_buffer(
@@ -39,6 +41,7 @@ class BufferBuilder {
     std::vector<unsigned int> offsets;
     std::vector<vk::raii::Buffer> buffers;
     vk::raii::DeviceMemory memory = nullptr;
+    unsigned int allocationSize = 0;
 };
 
 class CommandBufferBuilder {
@@ -60,6 +63,37 @@ class CommandBufferBuilder {
   private:
     vk::raii::CommandPool pool = nullptr;
     vk::raii::CommandBuffers buffers = nullptr;
+};
+
+class DescriptorSetBuilder {
+  public:
+    DescriptorSetBuilder(
+      const vk::raii::DescriptorSetLayout&,
+      vk::DescriptorPoolCreateFlags,
+      unsigned int,
+      unsigned int
+    );
+    DescriptorSetBuilder(DescriptorSetBuilder&) = delete;
+    DescriptorSetBuilder(DescriptorSetBuilder&&) = delete;
+
+    ~DescriptorSetBuilder() = default;
+
+    DescriptorSetBuilder& operator = (DescriptorSetBuilder&) = delete;
+    DescriptorSetBuilder& operator = (DescriptorSetBuilder&&) = delete;
+
+    void new_pool(
+      const vk::raii::DescriptorSetLayout&,
+      vk::DescriptorPoolCreateFlags,
+      unsigned int,
+      unsigned int
+    );
+
+    vk::raii::DescriptorPool&& retrieve_pool();
+    vk::raii::DescriptorSets&& retrieve_sets();
+
+  private:
+    vk::raii::DescriptorPool pool = nullptr;
+    vk::raii::DescriptorSets sets = nullptr;
 };
 
 } // namespace hlvl
