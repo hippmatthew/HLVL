@@ -14,8 +14,10 @@ set(TESTS_SOURCES
 )
 
 set(TESTS_SHADERS
-  ${CMAKE_CURRENT_SOURCE_DIR}/shaders/triangle.vert
+  ${CMAKE_CURRENT_SOURCE_DIR}/shaders/rectangle.frag
+  ${CMAKE_CURRENT_SOURCE_DIR}/shaders/rectangle.vert
   ${CMAKE_CURRENT_SOURCE_DIR}/shaders/triangle.frag
+  ${CMAKE_CURRENT_SOURCE_DIR}/shaders/triangle.vert
 )
 
 foreach(SHADER ${TESTS_SHADERS})

@@ -3,6 +3,7 @@
 #include "src/core/include/renderer.hpp"
 #include "src/core/include/settings.hpp"
 #include "src/core/include/vkbuilders.hpp"
+#include "vulkan/vulkan.hpp"
 #include "vulkan/vulkan_enums.hpp"
 
 #include <algorithm>
@@ -257,13 +258,24 @@ void Renderer::renderObject(const Object& object) {
 
   vk_commandBuffers[frameIndex].bindPipeline(vk::PipelineBindPoint::eGraphics, material.vk_gPipeline);
 
-  vk_commandBuffers[frameIndex].bindDescriptorSets(
-    vk::PipelineBindPoint::eGraphics,
-    material.vk_gLayout,
-    0,
-    *material.vk_descriptorSets[frameIndex],
-    nullptr
-  );
+  if (!material.vk_descriptorSets.empty()) {
+    vk_commandBuffers[frameIndex].bindDescriptorSets(
+      vk::PipelineBindPoint::eGraphics,
+      material.vk_gLayout,
+      0,
+      *material.vk_descriptorSets[frameIndex],
+      nullptr
+    );
+  }
+
+  if (material.constants != nullptr) {
+    vk_commandBuffers[frameIndex].pushConstants(
+      material.vk_gLayout,
+      vk::ShaderStageFlagBits::eAllGraphics,
+      0,
+      vk::ArrayProxy<const char>(material.constantsSize, reinterpret_cast<const char *>(material.constants))
+    );
+  }
 
   vk_commandBuffers[frameIndex].bindVertexBuffers(0, *object.vk_buffers[0], { 0 });
   vk_commandBuffers[frameIndex].bindIndexBuffer(*object.vk_buffers[1], 0, vk::IndexType::eUint32);

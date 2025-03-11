@@ -54,6 +54,19 @@ TEST_CASE( "end_to_end", "[endtoend]" ) {
   for (const auto& buffer : hlvl_objects.get_object(0).get_buffers())
     CHECK( *buffer != nullptr );
 
+  testUniform rectangleConstant;
+
+  hlvl_materials.create(
+    hlvl::Material::builder("rectangle")
+      .add_shader(vk::ShaderStageFlagBits::eVertex, "shaders/rectangle.vert.spv")
+      .add_shader(vk::ShaderStageFlagBits::eFragment, "shaders/rectangle.frag.spv")
+      .add_constants(sizeof(testUniform), &rectangleConstant)
+  );
+
+  REQUIRE( hlvl_materials.count() == 2 );
+  CHECK( *hlvl_materials["rectangle"].get_gLayout() != nullptr );
+  CHECK( *hlvl_materials["rectangle"].get_gPipeline() != nullptr );
+
   hlvl_objects.add(
     hlvl::Object::builder()
       .add_vertices({
@@ -63,7 +76,7 @@ TEST_CASE( "end_to_end", "[endtoend]" ) {
         {{ 0.7, -0.8, 0.0 }}
       })
       .add_indices({ 0, 3, 2, 2, 1, 0 })
-      .add_material("triangle")
+      .add_material("rectangle")
   );
 
   REQUIRE( hlvl_objects.count() == 2 );

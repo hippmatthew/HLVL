@@ -44,13 +44,19 @@ class Material {
 
         MaterialBuilder& add_shader(vk::ShaderStageFlagBits, std::string);
         MaterialBuilder& add_resource(ResourceInfo&&);
+        MaterialBuilder& add_constants(unsigned int, void *);
 
       private:
         std::string tag;
+
         std::map<vk::ShaderStageFlagBits, std::string> shaderMap;
+
         std::vector<ResourceInfo> resources;
         unsigned int storageCount = 0;
         unsigned int uniformCount = 0;
+
+        unsigned int constantsSize = 0;
+        void * constants = nullptr;
     };
 
   public:
@@ -90,6 +96,9 @@ class Material {
 
     vk::raii::DeviceMemory vk_memory = nullptr;
     std::vector<vk::raii::Buffer> vk_buffers;
+
+    unsigned int constantsSize = 0;
+    void * constants = nullptr;
 
     vk::raii::DescriptorSetLayout vk_dsLayout = nullptr;
     vk::raii::DescriptorPool vk_descriptorPool = nullptr;

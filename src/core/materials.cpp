@@ -3,6 +3,8 @@
 #include "src/core/include/materials.hpp"
 #include "src/core/include/settings.hpp"
 #include "src/core/include/vertex.hpp"
+#include "vulkan/vulkan_enums.hpp"
+#include "vulkan/vulkan_structs.hpp"
 
 #include <fstream>
 
@@ -25,10 +27,22 @@ Material::MaterialBuilder& Material::MaterialBuilder::add_resource(ResourceInfo&
   return *this;
 }
 
+Material::MaterialBuilder& Material::MaterialBuilder::add_constants(unsigned int s, void * d) {
+  constantsSize = s;
+  constants = d;
+  return *this;
+}
+
 Material::Material(MaterialBuilder& materialBuilder) {
   createGraphicsPipeline(materialBuilder);
-  createDescriptors(materialBuilder);
-  createDescriptorSets(materialBuilder);
+
+  if (materialBuilder.storageCount != 0 || materialBuilder.uniformCount != 0) {
+    createDescriptors(materialBuilder);
+    createDescriptorSets(materialBuilder);
+  }
+
+  constantsSize = materialBuilder.constantsSize;
+  constants = materialBuilder.constants;
 }
 
 Material::MaterialBuilder Material::builder(std::string tag) {
@@ -166,13 +180,17 @@ void Material::createGraphicsPipeline(MaterialBuilder& materialBuilder) {
 
   vk_dsLayout = Context::device().createDescriptorSetLayout(ci_dsLayout);
 
-  // push constants
+  vk::PushConstantRange range{
+    .stageFlags = vk::ShaderStageFlagBits::eAllGraphics,
+    .offset     = 0,
+    .size       = materialBuilder.constantsSize
+  };
 
   vk::PipelineLayoutCreateInfo ci_layout{
     .setLayoutCount         = 1,
     .pSetLayouts            = &*vk_dsLayout,
-    .pushConstantRangeCount = 0,
-    .pPushConstantRanges    = nullptr
+    .pushConstantRangeCount = materialBuilder.constantsSize != 0,
+    .pPushConstantRanges    = &range
   };
 
   vk_gLayout = Context::device().createPipelineLayout(ci_layout);
