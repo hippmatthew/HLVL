@@ -1,5 +1,5 @@
 #include "src/core/include/objects.hpp"
-#include "src/core/include/vkbuilders.hpp"
+#include "src/core/include/vkfactory.hpp"
 
 #include <stdexcept>
 
@@ -38,15 +38,22 @@ Object::Object(Object::ObjectBuilder& objectBuilder) {
   unsigned int vertexSize = objectBuilder.vertices.size() * sizeof(Vertex);
   unsigned int indexSize = objectBuilder.indices.size() * sizeof(unsigned int);
 
-  BufferBuilder bufferBuilder;
-  bufferBuilder
-    .new_buffer(vertexSize, vk::BufferUsageFlagBits::eTransferSrc)
-    .new_buffer(indexSize, vk::BufferUsageFlagBits::eTransferSrc)
-    .allocate(vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+  std::vector<vk::BufferCreateInfo> bufferInfos = {
+    vk::BufferCreateInfo{
+      .size         = vertexSize,
+      .usage        = vk::BufferUsageFlagBits::eTransferSrc,
+      .sharingMode  = vk::SharingMode::eExclusive
+    },
+    vk::BufferCreateInfo{
+      .size         = indexSize,
+      .usage        = vk::BufferUsageFlagBits::eTransferSrc,
+      .sharingMode  = vk::SharingMode::eExclusive
+    }
+  };
 
-  std::vector<unsigned int> stagingOffsets = bufferBuilder.retrieve_offsets();
-  std::vector<vk::raii::Buffer> stagingBuffers = bufferBuilder.retrieve_buffers();
-  vk::raii::DeviceMemory stagingMemory = bufferBuilder.retrieve_memory();
+  auto [stagingMemory, stagingBuffers, stagingOffsets, allocationSize] = VulkanFactory::newAllocation(
+    bufferInfos, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
+  );
 
   void * data = stagingMemory.mapMemory(0, stagingOffsets[1] + indexSize);
 
@@ -56,17 +63,14 @@ Object::Object(Object::ObjectBuilder& objectBuilder) {
   stagingMemory.unmapMemory();
   data = nullptr;
 
-  bufferBuilder.clear()
-    .new_buffer(vertexSize, vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst)
-    .new_buffer(indexSize, vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst)
-    .allocate(vk::MemoryPropertyFlagBits::eDeviceLocal);
+  bufferInfos[0].usage = vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst;
+  bufferInfos[1].usage = vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst;
 
-  vk_buffers = bufferBuilder.retrieve_buffers();
-  vk_memory = bufferBuilder.retrieve_memory();
+  auto [tmp_memory, tmp_buffers, _, __] = VulkanFactory::newAllocation(bufferInfos, vk::MemoryPropertyFlagBits::eDeviceLocal);
+  vk_memory = std::move(tmp_memory);
+  vk_buffers = std::move(tmp_buffers);
 
-  CommandBufferBuilder commandBuilder(vk::CommandPoolCreateFlagBits::eTransient, 2, Transfer);
-  vk::raii::CommandBuffers commandBuffers = commandBuilder.retrieve_buffers();
-
+  auto [commandPool, commandBuffers] = VulkanFactory::newCommandPool(Transfer, 2, vk::CommandPoolCreateFlagBits::eTransient);
   unsigned int sizes[2] = { vertexSize, indexSize };
 
   unsigned int index = 0;

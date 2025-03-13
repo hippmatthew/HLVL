@@ -8,7 +8,7 @@ set(CORE_INCLUDES
   ${CMAKE_CURRENT_SOURCE_DIR}/include/resource.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/settings.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/vertex.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/vkbuilders.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/vkfactory.hpp
 )
 
 set(CORE_SOURCES
@@ -18,7 +18,7 @@ set(CORE_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/renderer.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/settings.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/vertex.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/vkbuilders.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/vkfactory.cpp
 )
 
 add_library(hlvl.core OBJECT ${CORE_INCLUDES} ${CORE_SOURCES})

@@ -27,7 +27,6 @@ class Renderer {
 
     void init();
     void createImageViews();
-    void createCommandBuffers();
     void createSyncObjects();
     void render();
     void beginRendering(unsigned int);

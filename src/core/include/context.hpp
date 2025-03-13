@@ -40,6 +40,8 @@ class Context {
   friend class Material;
   friend class Object;
   friend class Renderer;
+  friend class TextureBuilder;
+  friend class VulkanFactory;
 
   template <typename T>
   friend class Resource;

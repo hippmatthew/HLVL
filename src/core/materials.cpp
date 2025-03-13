@@ -1,10 +1,8 @@
-#include "include/vkbuilders.hpp"
 #include "src/core/include/context.hpp"
 #include "src/core/include/materials.hpp"
 #include "src/core/include/settings.hpp"
 #include "src/core/include/vertex.hpp"
-#include "vulkan/vulkan_enums.hpp"
-#include "vulkan/vulkan_structs.hpp"
+#include "src/core/include/vkfactory.hpp"
 
 #include <fstream>
 
@@ -219,20 +217,24 @@ void Material::createGraphicsPipeline(MaterialBuilder& materialBuilder) {
 }
 
 void Material::createDescriptors(MaterialBuilder& materialBuilder) {
-  BufferBuilder bufferBuilder;
-
+  std::vector<vk::BufferCreateInfo> bufferInfos;
   for (unsigned int i = 0; i < hlvl_settings.buffer_mode; ++i) {
-    for (const auto& resource : materialBuilder.resources)
-      bufferBuilder.new_buffer(resource.resource->size, static_cast<vk::BufferUsageFlagBits>(resource.type));
+    for (const auto& resource : materialBuilder.resources) {
+      bufferInfos.emplace_back(vk::BufferCreateInfo{
+        .size = resource.resource->size,
+        .usage = static_cast<vk::BufferUsageFlagBits>(resource.type),
+        .sharingMode = vk::SharingMode::eExclusive
+      });
+    }
   }
 
-  bufferBuilder.allocate(vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+  auto [tmp_memory, tmp_buffers, offsets, allocationSize] = VulkanFactory::newAllocation(
+    bufferInfos,vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
+  );
+  vk_memory = std::move(tmp_memory);
+  vk_buffers = std::move(tmp_buffers);
 
-  vk_memory = bufferBuilder.retrieve_memory();
-  vk_buffers = bufferBuilder.retrieve_buffers();
-  std::vector<unsigned int> offsets = bufferBuilder.retrieve_offsets();
-
-  void * memoryMap = vk_memory.mapMemory(0, bufferBuilder.allocation_size());
+  void * memoryMap = vk_memory.mapMemory(0, allocationSize);
   unsigned int index = 0;
   for (auto& resource : materialBuilder.resources) {
     resource.resource->memoryMap = memoryMap;
@@ -246,14 +248,14 @@ void Material::createDescriptors(MaterialBuilder& materialBuilder) {
 }
 
 void Material::createDescriptorSets(MaterialBuilder& materialBuilder) {
-  DescriptorSetBuilder dsBuilder(
+  auto [tmp_descriptorPool, tmp_descriptorSets] = VulkanFactory::newDescriptorPool(
     vk_dsLayout,
     vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
     materialBuilder.storageCount,
     materialBuilder.uniformCount
   );
-  vk_descriptorPool = dsBuilder.retrieve_pool();
-  vk_descriptorSets = dsBuilder.retrieve_sets();
+  vk_descriptorPool = std::move(tmp_descriptorPool);
+  vk_descriptorSets = std::move(tmp_descriptorSets);
 
   std::vector<vk::WriteDescriptorSet> writes;
   unsigned int index = 0;

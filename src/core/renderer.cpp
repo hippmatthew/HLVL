@@ -2,9 +2,7 @@
 #include "src/core/include/materials.hpp"
 #include "src/core/include/renderer.hpp"
 #include "src/core/include/settings.hpp"
-#include "src/core/include/vkbuilders.hpp"
-#include "vulkan/vulkan.hpp"
-#include "vulkan/vulkan_enums.hpp"
+#include "src/core/include/vkfactory.hpp"
 
 #include <algorithm>
 #include <limits>
@@ -86,7 +84,13 @@ void Renderer::init() {
   vk_images = vk_swapchain.getImages();
 
   createImageViews();
-  createCommandBuffers();
+
+  auto [tmp_commandPool, tmp_commandBuffers] = VulkanFactory::newCommandPool(
+    Main, hlvl_settings.buffer_mode, vk::CommandPoolCreateFlagBits::eResetCommandBuffer
+  );
+  vk_commandPool = std::move(tmp_commandPool);
+  vk_commandBuffers = std::move(tmp_commandBuffers);
+
   createSyncObjects();
 }
 
@@ -113,17 +117,6 @@ void Renderer::createImageViews() {
 
     vk_imageViews.emplace_back(Context::device().createImageView(ci_imageView));
   }
-}
-
-void Renderer::createCommandBuffers() {
-  CommandBufferBuilder cbBuilder(
-    vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-    hlvl_settings.buffer_mode,
-    Main
-  );
-
-  vk_commandPool = cbBuilder.retrieve_pool();
-  vk_commandBuffers = cbBuilder.retrieve_buffers();
 }
 
 void Renderer::createSyncObjects() {
