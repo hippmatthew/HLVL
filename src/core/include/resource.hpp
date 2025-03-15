@@ -58,7 +58,7 @@ class Resource : public ResourceProxy {
       memcpy((char *)memoryMap + offsets[Context::frameIndex()], &data, sizeof(data));
     }
 
-    const T& operator * (int) const {
+    const T& operator * () const {
       return data;
     }
 

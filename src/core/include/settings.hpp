@@ -47,6 +47,7 @@ class Settings {
 
     BufferMode buffer_mode = TripleBuffer;
     vk::Format format = vk::Format::eB8G8R8A8Srgb;
+    vk::Format depth_format = vk::Format::eD32Sfloat;
     vk::ColorSpaceKHR color_space = vk::ColorSpaceKHR::eSrgbNonlinear;
     vk::PresentModeKHR present_mode = vk::PresentModeKHR::eMailbox;
     vk::Extent2D extent = vk::Extent2D{ 1280, 720 };

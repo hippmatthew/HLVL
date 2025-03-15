@@ -36,6 +36,12 @@ class VulkanFactory {
     std::vector<vk::raii::Sampler>
   >;
 
+  using DepthOutput = std::tuple<
+    vk::raii::DeviceMemory,
+    std::vector<vk::raii::Image>,
+    std::vector<vk::raii::ImageView>
+  >;
+
   using PNG = std::tuple<
     unsigned char *,
     unsigned int,
@@ -63,6 +69,7 @@ class VulkanFactory {
       unsigned int
     );
     static TextureOutput newTextureAllocation(const std::vector<std::string>&);
+    static DepthOutput newDepthAllocation(unsigned int);
 
   private:
     static unsigned int findMemoryIndex(unsigned int, vk::MemoryPropertyFlags);

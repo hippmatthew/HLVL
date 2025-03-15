@@ -161,6 +161,14 @@ void Material::createGraphicsPipeline(MaterialBuilder& materialBuilder) {
     .sampleShadingEnable  = false
   };
 
+  vk::PipelineDepthStencilStateCreateInfo ci_depth{
+    .depthTestEnable        = true,
+    .depthWriteEnable       = true,
+    .depthCompareOp         = vk::CompareOp::eLess,
+    .depthBoundsTestEnable  = false,
+    .stencilTestEnable      = false
+  };
+
   vk::PipelineColorBlendAttachmentState colorAttachment{
     .blendEnable          = true,
     .srcColorBlendFactor  = vk::BlendFactor::eSrcAlpha,
@@ -246,7 +254,8 @@ void Material::createGraphicsPipeline(MaterialBuilder& materialBuilder) {
 
   vk::PipelineRenderingCreateInfo ci_rendering{
     .colorAttachmentCount = 1,
-    .pColorAttachmentFormats = &hlvl_settings.format
+    .pColorAttachmentFormats = &hlvl_settings.format,
+    .depthAttachmentFormat = hlvl_settings.depth_format
   };
 
   vk::GraphicsPipelineCreateInfo ci_gPipeline{
@@ -258,7 +267,7 @@ void Material::createGraphicsPipeline(MaterialBuilder& materialBuilder) {
     .pViewportState       = &ci_viewport,
     .pRasterizationState  = &ci_rasterizer,
     .pMultisampleState    = &ci_multisample,
-    .pDepthStencilState   = nullptr,
+    .pDepthStencilState   = &ci_depth,
     .pColorBlendState     = &ci_blend,
     .pDynamicState        = &ci_dynamicState,
     .layout               = vk_gLayout

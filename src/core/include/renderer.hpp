@@ -40,6 +40,10 @@ class Renderer {
     std::vector<vk::Image> vk_images;
     std::vector<vk::raii::ImageView> vk_imageViews;
 
+    vk::raii::DeviceMemory vk_dMemory = nullptr;
+    std::vector<vk::raii::Image> vk_dImages;
+    std::vector<vk::raii::ImageView> vk_dViews;
+
     vk::raii::CommandPool vk_commandPool = nullptr;
     vk::raii::CommandBuffers vk_commandBuffers = nullptr;
 

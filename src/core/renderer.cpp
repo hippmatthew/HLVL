@@ -3,6 +3,7 @@
 #include "src/core/include/renderer.hpp"
 #include "src/core/include/settings.hpp"
 #include "src/core/include/vkfactory.hpp"
+#include "vulkan/vulkan_enums.hpp"
 
 #include <algorithm>
 #include <limits>
@@ -84,6 +85,11 @@ void Renderer::init() {
   vk_images = vk_swapchain.getImages();
 
   createImageViews();
+
+  auto [tmp_dMemory, tmp_dImages, tmp_dViews] = VulkanFactory::newDepthAllocation(vk_images.size());
+  vk_dMemory = std::move(tmp_dMemory);
+  vk_dImages = std::move(tmp_dImages);
+  vk_dViews = std::move(tmp_dViews);
 
   auto [tmp_commandPool, tmp_commandBuffers] = VulkanFactory::newCommandPool(
     Main, hlvl_settings.buffer_mode, vk::CommandPoolCreateFlagBits::eResetCommandBuffer
@@ -202,7 +208,7 @@ void Renderer::beginRendering(unsigned int imgIndex) {
 
   vk_commandBuffers[frameIndex].begin(vk::CommandBufferBeginInfo{});
 
-  vk::ImageMemoryBarrier barrier{
+  vk::ImageMemoryBarrier colorBarrier{
     .dstAccessMask    = vk::AccessFlagBits::eColorAttachmentWrite,
     .oldLayout        = vk::ImageLayout::eUndefined,
     .newLayout        = vk::ImageLayout::eColorAttachmentOptimal,
@@ -222,7 +228,29 @@ void Renderer::beginRendering(unsigned int imgIndex) {
     vk::DependencyFlags(),
     nullptr,
     nullptr,
-    barrier
+    colorBarrier
+  );
+
+  vk::ImageMemoryBarrier depthBarrier{
+    .oldLayout  = vk::ImageLayout::eUndefined,
+    .newLayout  = vk::ImageLayout::eDepthStencilAttachmentOptimal,
+    .image      = vk_dImages[imgIndex],
+    .subresourceRange = {
+      .aspectMask     = vk::ImageAspectFlagBits::eDepth,
+      .baseMipLevel   = 0,
+      .levelCount     = 1,
+      .baseArrayLayer = 0,
+      .layerCount     = 1
+    }
+  };
+
+  vk_commandBuffers[frameIndex].pipelineBarrier(
+    vk::PipelineStageFlagBits::eTopOfPipe,
+    vk::PipelineStageFlagBits::eEarlyFragmentTests,
+    vk::DependencyFlags(),
+    nullptr,
+    nullptr,
+    depthBarrier
   );
 
   vk::RenderingAttachmentInfo colorInfo{
@@ -233,6 +261,14 @@ void Renderer::beginRendering(unsigned int imgIndex) {
     .clearValue   = { hlvl_settings.background_color }
   };
 
+  vk::RenderingAttachmentInfo depthInfo{
+    .imageView    = vk_dViews[imgIndex],
+    .imageLayout  = vk::ImageLayout::eDepthAttachmentOptimal,
+    .loadOp       = vk::AttachmentLoadOp::eClear,
+    .storeOp      = vk::AttachmentStoreOp::eDontCare,
+    .clearValue   = { .depthStencil = { 1, 0 } }
+  };
+
   vk::RenderingInfo renderInfo{
     .renderArea = {
       .offset = { 0, 0 },
@@ -240,7 +276,8 @@ void Renderer::beginRendering(unsigned int imgIndex) {
     },
     .layerCount           = 1,
     .colorAttachmentCount = 1,
-    .pColorAttachments    = &colorInfo
+    .pColorAttachments    = &colorInfo,
+    .pDepthAttachment     = &depthInfo
   };
 
   vk_commandBuffers[frameIndex].beginRendering(renderInfo);

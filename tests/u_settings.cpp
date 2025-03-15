@@ -26,6 +26,9 @@ TEST_CASE( "settings", "[unit][settings]" ) {
     hlvl_settings.format = vk::Format::eA2R10G10B10UintPack32;
     CHECK( hlvl_settings.format == vk::Format::eA2R10G10B10UintPack32 );
 
+    hlvl_settings.depth_format = vk::Format::eA2B10G10R10UintPack32;
+    CHECK( hlvl_settings.depth_format == vk::Format::eA2B10G10R10UintPack32 );
+
     hlvl_settings.color_space = vk::ColorSpaceKHR::eVkColorspaceSrgbNonlinear;
     CHECK( hlvl_settings.color_space == vk::ColorSpaceKHR::eVkColorspaceSrgbNonlinear );
 
@@ -51,6 +54,7 @@ TEST_CASE( "settings", "[unit][settings]" ) {
 
     CHECK( hlvl_settings.buffer_mode == hlvl::BufferMode::TripleBuffer );
     CHECK( hlvl_settings.format == vk::Format::eB8G8R8A8Srgb );
+    CHECK( hlvl_settings.depth_format == vk::Format::eD32Sfloat );
     CHECK( hlvl_settings.color_space == vk::ColorSpaceKHR::eSrgbNonlinear );
     CHECK( hlvl_settings.extent == vk::Extent2D{ 1280, 720 } );
     CHECK( hlvl_settings.background_color == std::array<float, 4>{ 0.0, 0.0, 0.0, 1.0 } );

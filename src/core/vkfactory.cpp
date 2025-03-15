@@ -1,10 +1,13 @@
 #include "src/core/include/settings.hpp"
+#include "vulkan/vulkan_enums.hpp"
+#include "vulkan/vulkan_raii.hpp"
 #include "src/core/include/vkfactory.hpp"
 
 #include <png.h>
 
 #include <cstdio>
 #include <cstdlib>
+#include <queue>
 
 namespace hlvl {
 
@@ -337,6 +340,103 @@ VulkanFactory::TextureOutput VulkanFactory::newTextureAllocation(const std::vect
   }
 
   return { std::move(memory), std::move(images), std::move(views), std::move(samplers) };
+}
+
+VulkanFactory::DepthOutput VulkanFactory::newDepthAllocation(unsigned int imageCount) {
+  vk::raii::DeviceMemory memory = nullptr;
+  std::vector<vk::raii::Image> images;
+  std::vector<vk::raii::ImageView> views;
+
+  std::queue<vk::Format> depthFormats;
+  depthFormats.emplace(vk::Format::eD32SfloatS8Uint);
+  depthFormats.emplace(vk::Format::eD24UnormS8Uint);
+
+  bool supported = false;
+  while (!depthFormats.empty()) {
+    vk::FormatProperties properties = Context::physicalDevice().getFormatProperties(hlvl_settings.depth_format);
+
+    if (properties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment) {
+      supported = true;
+      break;
+    }
+
+    hlvl_settings.depth_format = depthFormats.front();
+    depthFormats.pop();
+  }
+  if (!supported)
+    throw std::runtime_error("hlvl: failed to find supported depth format");
+
+  for (unsigned int i = 0; i < imageCount; ++i) {
+    vk::ImageCreateInfo ci_image{
+      .imageType  = vk::ImageType::e2D,
+      .format     = hlvl_settings.depth_format,
+      .extent     = {
+        .width  = hlvl_settings.extent.width,
+        .height = hlvl_settings.extent.height,
+        .depth  = 1
+      },
+      .mipLevels    = 1,
+      .arrayLayers  = 1,
+      .samples      = vk::SampleCountFlagBits::e1,
+      .tiling       = vk::ImageTiling::eOptimal,
+      .usage        = vk::ImageUsageFlagBits::eDepthStencilAttachment,
+      .sharingMode  = vk::SharingMode::eExclusive
+    };
+
+    images.emplace_back(Context::device().createImage(ci_image));
+  }
+
+  unsigned int filter = ~(0x0);
+  unsigned int allocationSize = 0;
+  std::vector<unsigned int> offsets;
+
+  for (const auto& image : images) {
+    vk::MemoryRequirements requirements = image.getMemoryRequirements();
+
+    unsigned int offset =
+      (allocationSize + requirements.alignment - 1) / requirements.alignment * requirements.alignment;
+
+    offsets.emplace_back(offset);
+
+    filter &= requirements.memoryTypeBits;
+    allocationSize = offset + requirements.size;
+  }
+
+  vk::MemoryAllocateInfo allocateInfo{
+    .allocationSize   = allocationSize,
+    .memoryTypeIndex  = findMemoryIndex(filter, vk::MemoryPropertyFlagBits::eDeviceLocal)
+  };
+
+  memory = Context::device().allocateMemory(allocateInfo);
+
+  for (unsigned int i = 0; i < imageCount; ++i)
+    images[i].bindMemory(memory, offsets[i]);
+
+  for (const auto& image : images) {
+    vk::ImageViewCreateInfo ci_view{
+      .image      = image,
+      .viewType   = vk::ImageViewType::e2D,
+      .format     = hlvl_settings.depth_format,
+      .components = {
+        .r = vk::ComponentSwizzle::eIdentity,
+        .g = vk::ComponentSwizzle::eIdentity,
+        .b = vk::ComponentSwizzle::eIdentity,
+        .a = vk::ComponentSwizzle::eIdentity
+      },
+      .subresourceRange = {
+        .aspectMask     = vk::ImageAspectFlagBits::eDepth,
+        .baseMipLevel   = 0,
+        .levelCount     = 1,
+        .baseArrayLayer = 0,
+        .layerCount     = 1
+      }
+    };
+
+    views.emplace_back(Context::device().createImageView(ci_view));
+  }
+
+
+  return { std::move(memory), std::move(images), std::move(views) };
 }
 
 unsigned int VulkanFactory::findMemoryIndex(unsigned int filter, vk::MemoryPropertyFlags flags) {

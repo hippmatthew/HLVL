@@ -192,6 +192,16 @@ mat<4, float> mat<N, T>::translation(la::vec<3> displacement) {
 }
 
 template <unsigned int N, typename T>
+mat<4, float> mat<N, T>::scale(la::vec<3> s) {
+  return mat<4, float> {
+    { s[0], 0, 0, 0 },
+    { 0, s[1], 0, 0 },
+    { 0, 0, s[2], 0 },
+    { 0, 0, 0, 1 }
+  };
+}
+
+template <unsigned int N, typename T>
 mat<N, T> mat<N, T>::transpose() const {
   mat res;
   for (int i = 0; i < N; ++i) {

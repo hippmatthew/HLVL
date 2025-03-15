@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21.0)
 
 set(HLVL_VERSION_MAJOR 0)
-set(HLVL_VERSION_MINOR 106)
+set(HLVL_VERSION_MINOR 109)
 set(HLVL_VERSION_PATCH 0)
 
 project(HLVL

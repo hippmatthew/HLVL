@@ -55,6 +55,7 @@ class alignas(
     static mat<4, float> projection(float, float, float, float);
     static mat<4, float> rotation(la::vec<3>);
     static mat<4, float> translation(la::vec<3>);
+    static mat<4, float> scale(la::vec<3>);
 
     mat transpose() const;
 
