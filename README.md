@@ -55,7 +55,7 @@ window and vulkan objects.
 > window settings: `window_width`, `window_height`, `window_title`
 > application settings: `application_name`, `application_version`
 > renderer settings:
-> - `buffer_mode`: Whether to double or triple buffer,
+> - `buffer_mode`: Whether to single, double, or triple buffer
 > - `format` and `color_space`: the image format and color space to prioritize. If unavailable, will choose the vulkan defaults
 > - `present_mode`: How the renderer delivers the image to the screen. Will choose FIFO mode if chosen is unavailable
 > - `extent`: The rendering area. Defaults to the size of the window but you can technially change this
@@ -72,14 +72,60 @@ Materials in HLVL are defined as a class that stores all of the information rela
 This would be a the pipelines, uniform buffers, texture samplers, push constants, etc. They are separated from
 the renderable objects as to allow for multiple objects to use the same material.
 
-Materials have a builder class to help with their creation. Use `Material::builder()` to get a new builder object
-and then the `add_shader()` function to add shaders to the builder.
+Materials have a builder class to help with their creation. Use `Material::builder()` ot retrieve a material builder.
 
-> This will be expanded upon in the near future to allow for the addition of uniform buffers and push constants
-> and what not. If a custom shader language is created, materials might even be automatically produced while parsing
-> the shader file
+**`MaterialBuilder` methods**
+
+`add_shader(vk::ShaderStageFlagBits stage, std::string path)`
+: tells the builder that the spir-v file at `path` is a shader for the pipeline stage specified by `stage`.
+
+`add_texture(std::string path)`
+: tells the builder that there is a texture at `path`. Textures are all in descriptor set 0 and have binding
+numbers in order of addition to the material. Textures are only available in the fragment shader.
+
+`add_resource({ type = Storage/Uniform, vk::PipelineShaderStageFlags stages, Resource * resource })`
+: add a storage or uniform buffer to the shader to be accesible by the stages specified in `stages`. All buffers
+share the same descriptor set and have binding numbers in order of addition to the material. If there
+are textures in the material, buffers will be on descriptor set 0. Otherwise, they will be on descriptor set 1.
+
+`add_constants(unsigned int size, void * data)`
+: add push constants to the material. Data should be a struct containing every constant you want in the material.
+Push constants are available in every graphics pipeline stage.
 
 To create the material, pass the material builder into the `hlvl_materials.create()` function.
+
+<details>
+  <summary>Click here for information on how to add these objects to your glsl shaders</summary>
+
+  Vulkan expects to recieve data matching exactly to what shaders are asking for, so it is important that the textures,
+  buffers, and push constants you add to a material reflect what is happening in the material's shaders
+
+  **glsl textures**
+  ```glsl
+  layout(set = 0, binding = N) uniform sampler2D  variable_name;
+  ```
+
+  **glsl buffers**
+  ```glsl
+  layout(set = 0/1, binding = N) buffer/uniform Class_Name {
+    // class data
+  } variable_name_if_not_global;
+  ```
+
+  **glsl push constants**
+  ```glsl
+  layout(push_constant) uniform Class_Name {
+    // class data
+  } variable_name_if_not_global;
+  ```
+</details>
+
+**`hlvl::Resource<T>` Info**
+
+These are specialized objects that are solely to be used in material buffers. Every time you assign a new value to
+a resource, the resource automatically updates its associated device buffer through a persistant memory mapping. Due
+to this, resources should not exist without being assigned to a material. Should you try to assign a value to a resource
+that has not been added to a material, a segmentation fault will occur since there is no mapped memory to copy to.
 
 #### Objects
 
@@ -87,6 +133,10 @@ HLVL Objects are classes that have a vertex buffer, index buffer, and material. 
 creating materials. First, create the builder with `Object::builder()` and then add your vertex buffer, index buffer,
 and material with `.add_vertices()`, `.add_indices()`, and `.add_material()`. Then, pass your object builder into
 `hlvl_objects.add()`
+
+> HLVL specifies a vertex as a `vec<3>` position and a `vec<2>` uv coordinate
+
+> There are plans to have importable object files in the future. For now, specifiying the vertices is all you can do
 
 #### Main Loop
 
