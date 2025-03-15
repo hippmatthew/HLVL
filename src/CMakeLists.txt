@@ -1,5 +1,6 @@
 find_package(Vulkan REQUIRED)
 find_package(glfw3 REQUIRED)
+find_package(PNG REQUIRED)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/core)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/linalg)
@@ -18,4 +19,5 @@ endif()
 target_link_libraries(hlvl PRIVATE
   Vulkan::Vulkan
   glfw
+  PNG::PNG
 )

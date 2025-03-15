@@ -3,6 +3,7 @@
 #include "src/core/include/settings.hpp"
 #include "src/core/include/vertex.hpp"
 #include "src/core/include/vkfactory.hpp"
+#include "vulkan/vulkan_enums.hpp"
 
 #include <fstream>
 
@@ -31,13 +32,28 @@ Material::MaterialBuilder& Material::MaterialBuilder::add_constants(unsigned int
   return *this;
 }
 
+Material::MaterialBuilder& Material::MaterialBuilder::add_texture(std::string path) {
+  textures.emplace_back(path);
+  return *this;
+}
+
 Material::Material(MaterialBuilder& materialBuilder) {
   createGraphicsPipeline(materialBuilder);
 
-  if (materialBuilder.storageCount != 0 || materialBuilder.uniformCount != 0) {
-    createDescriptors(materialBuilder);
-    createDescriptorSets(materialBuilder);
+  if (!materialBuilder.textures.empty()) {
+    auto [tmp_texMemory, tmp_images, tmp_imageViews, tmp_samplers] =
+      VulkanFactory::newTextureAllocation(materialBuilder.textures);
+    vk_texMemory = std::move(tmp_texMemory);
+    vk_images = std::move(tmp_images);
+    vk_imageViews = std::move(tmp_imageViews);
+    vk_samplers = std::move(tmp_samplers);
   }
+
+  if (materialBuilder.storageCount != 0 || materialBuilder.uniformCount != 0)
+    createDescriptors(materialBuilder);
+
+  if (!materialBuilder.textures.empty() || materialBuilder.storageCount != 0 || materialBuilder.uniformCount != 0)
+    createDescriptorSets(materialBuilder);
 
   constantsSize = materialBuilder.constantsSize;
   constants = materialBuilder.constants;
@@ -146,11 +162,17 @@ void Material::createGraphicsPipeline(MaterialBuilder& materialBuilder) {
   };
 
   vk::PipelineColorBlendAttachmentState colorAttachment{
-    .blendEnable    = false,
-    .colorWriteMask = vk::ColorComponentFlagBits::eR |
-                      vk::ColorComponentFlagBits::eG |
-                      vk::ColorComponentFlagBits::eB |
-                      vk::ColorComponentFlagBits::eA
+    .blendEnable          = true,
+    .srcColorBlendFactor  = vk::BlendFactor::eSrcAlpha,
+    .dstColorBlendFactor  = vk::BlendFactor::eOneMinusSrcAlpha,
+    .colorBlendOp         = vk::BlendOp::eAdd,
+    .srcAlphaBlendFactor  = vk::BlendFactor::eOne,
+    .dstAlphaBlendFactor  = vk::BlendFactor::eOneMinusSrcAlpha,
+    .alphaBlendOp         = vk::BlendOp::eAdd,
+    .colorWriteMask       = vk::ColorComponentFlagBits::eR |
+                            vk::ColorComponentFlagBits::eG |
+                            vk::ColorComponentFlagBits::eB |
+                            vk::ColorComponentFlagBits::eA
   };
 
   vk::PipelineColorBlendStateCreateInfo ci_blend{
@@ -159,24 +181,53 @@ void Material::createGraphicsPipeline(MaterialBuilder& materialBuilder) {
     .pAttachments     = &colorAttachment
   };
 
-  std::vector<vk::DescriptorSetLayoutBinding> bindings;
-  unsigned int index = 0;
-  for (const auto& resource : materialBuilder.resources) {
-    bindings.emplace_back(vk::DescriptorSetLayoutBinding{
-      .binding          = index++,
-      .descriptorType   = resource.type == Uniform ?
-                            vk::DescriptorType::eUniformBuffer : vk::DescriptorType::eStorageBuffer,
-      .descriptorCount  = 1,
-      .stageFlags       = resource.stages
+  std::vector<vk::DescriptorSetLayoutCreateInfo> ci_dsLayouts;
+  std::vector<std::vector<vk::DescriptorSetLayoutBinding>> bindings;
+
+  if (!materialBuilder.textures.empty()) {
+    bindings.emplace_back(std::vector<vk::DescriptorSetLayoutBinding>{});
+    unsigned int binding = 0;
+
+    for (const auto& texture : materialBuilder.textures) {
+      bindings[0].emplace_back(vk::DescriptorSetLayoutBinding{
+        .binding          = binding++,
+        .descriptorType   = vk::DescriptorType::eCombinedImageSampler,
+        .descriptorCount  = 1,
+        .stageFlags       = vk::ShaderStageFlagBits::eFragment,
+      });
+    }
+
+    ci_dsLayouts.emplace_back(vk::DescriptorSetLayoutCreateInfo{
+      .bindingCount = binding,
+      .pBindings    = bindings[0].data()
     });
   }
 
-  vk::DescriptorSetLayoutCreateInfo ci_dsLayout{
-    .bindingCount = static_cast<unsigned int>(bindings.size()),
-    .pBindings    = bindings.data()
-  };
+  if (!materialBuilder.resources.empty()) {
+    bindings.emplace_back(std::vector<vk::DescriptorSetLayoutBinding>{});
+    unsigned int binding = 0;
 
-  vk_dsLayout = Context::device().createDescriptorSetLayout(ci_dsLayout);
+    for (const auto& resource : materialBuilder.resources) {
+      bindings[bindings.size() - 1].emplace_back(vk::DescriptorSetLayoutBinding{
+        .binding          = binding++,
+        .descriptorType   = resource.type == Uniform ?
+                            vk::DescriptorType::eUniformBuffer : vk::DescriptorType::eStorageBuffer,
+        .descriptorCount  = 1,
+        .stageFlags       = resource.stages
+      });
+    }
+
+    ci_dsLayouts.emplace_back(vk::DescriptorSetLayoutCreateInfo{
+      .bindingCount = binding,
+      .pBindings    = bindings[bindings.size() - 1].data()
+    });
+  }
+
+  std::vector<vk::DescriptorSetLayout> layouts;
+  for (const auto& ci_dsLayout : ci_dsLayouts) {
+    vk_dsLayouts.emplace_back(Context::device().createDescriptorSetLayout(ci_dsLayout));
+    layouts.emplace_back(*vk_dsLayouts[vk_dsLayouts.size() - 1]);
+  }
 
   vk::PushConstantRange range{
     .stageFlags = vk::ShaderStageFlagBits::eAllGraphics,
@@ -185,8 +236,8 @@ void Material::createGraphicsPipeline(MaterialBuilder& materialBuilder) {
   };
 
   vk::PipelineLayoutCreateInfo ci_layout{
-    .setLayoutCount         = 1,
-    .pSetLayouts            = &*vk_dsLayout,
+    .setLayoutCount         = static_cast<unsigned int>(layouts.size()),
+    .pSetLayouts            = layouts.data(),
     .pushConstantRangeCount = materialBuilder.constantsSize != 0,
     .pPushConstantRanges    = &range
   };
@@ -231,10 +282,10 @@ void Material::createDescriptors(MaterialBuilder& materialBuilder) {
   auto [tmp_memory, tmp_buffers, offsets, allocationSize] = VulkanFactory::newAllocation(
     bufferInfos,vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
   );
-  vk_memory = std::move(tmp_memory);
+  vk_bufMemory = std::move(tmp_memory);
   vk_buffers = std::move(tmp_buffers);
 
-  void * memoryMap = vk_memory.mapMemory(0, allocationSize);
+  void * memoryMap = vk_bufMemory.mapMemory(0, allocationSize);
   unsigned int index = 0;
   for (auto& resource : materialBuilder.resources) {
     resource.resource->memoryMap = memoryMap;
@@ -249,8 +300,9 @@ void Material::createDescriptors(MaterialBuilder& materialBuilder) {
 
 void Material::createDescriptorSets(MaterialBuilder& materialBuilder) {
   auto [tmp_descriptorPool, tmp_descriptorSets] = VulkanFactory::newDescriptorPool(
-    vk_dsLayout,
     vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
+    vk_dsLayouts,
+    materialBuilder.textures.size(),
     materialBuilder.storageCount,
     materialBuilder.uniformCount
   );
@@ -258,7 +310,29 @@ void Material::createDescriptorSets(MaterialBuilder& materialBuilder) {
   vk_descriptorSets = std::move(tmp_descriptorSets);
 
   std::vector<vk::WriteDescriptorSet> writes;
+
   unsigned int index = 0;
+  for (const auto& vk_image : vk_images) {
+    for (unsigned int i = 0; i < hlvl_settings.buffer_mode; ++i) {
+      vk::DescriptorImageInfo imageInfo{
+        .sampler      = vk_samplers[index],
+        .imageView    = vk_imageViews[index],
+        .imageLayout  = vk::ImageLayout::eShaderReadOnlyOptimal
+      };
+
+      writes.emplace_back(vk::WriteDescriptorSet{
+        .dstSet           = vk_descriptorSets[i],
+        .dstBinding       = index,
+        .dstArrayElement  = 0,
+        .descriptorCount  = 1,
+        .descriptorType   = vk::DescriptorType::eCombinedImageSampler,
+        .pImageInfo       = &imageInfo
+      });
+    }
+    ++index;
+  }
+
+  index = 0;
   for (const auto& resource : materialBuilder.resources) {
     for (unsigned int i = 0; i < hlvl_settings.buffer_mode; ++i) {
       vk::DescriptorBufferInfo bufferInfo{
@@ -268,7 +342,7 @@ void Material::createDescriptorSets(MaterialBuilder& materialBuilder) {
       };
 
       writes.emplace_back(vk::WriteDescriptorSet{
-        .dstSet           = vk_descriptorSets[i],
+        .dstSet           = vk_descriptorSets[hlvl_settings.buffer_mode * (!materialBuilder.textures.empty()) + i],
         .dstBinding       = index,
         .dstArrayElement  = 0,
         .descriptorCount  = 1,

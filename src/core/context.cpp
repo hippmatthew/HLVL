@@ -269,6 +269,9 @@ void Context::chooseGPU() {
     }
     if (!supported) continue;
 
+    vk::PhysicalDeviceFeatures features = gpu.getFeatures();
+    if (!features.samplerAnisotropy) continue;
+
     if (prevType == vk::PhysicalDeviceType::eOther
           || comparisonMap[typeIndex(prevType)][typeIndex(properties.deviceType)]
     ) {
@@ -302,7 +305,9 @@ void Context::createDevice(bool portability) {
       deviceExtensions.emplace_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
   }
 
-  vk::PhysicalDeviceFeatures features;
+  vk::PhysicalDeviceFeatures features{
+    .samplerAnisotropy = true
+  };
 
   vk::PhysicalDeviceDynamicRenderingFeaturesKHR dynRender{
     .dynamicRendering = vk::True

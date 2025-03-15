@@ -35,4 +35,5 @@ endif()
 target_compile_definitions(hlvl.core PRIVATE
   "GLFW_INCLUDE_NONE"
   "VULKAN_HPP_NO_CONSTRUCTORS"
+  "hlvl_engine_version=hlvl_make_version(${HLVL_VERSION_MAJOR}, ${HLVL_VERSION_MINOR}, ${HLVL_VERSION_PATCH})"
 )

@@ -45,6 +45,7 @@ class Material {
         MaterialBuilder& add_shader(vk::ShaderStageFlagBits, std::string);
         MaterialBuilder& add_resource(ResourceInfo&&);
         MaterialBuilder& add_constants(unsigned int, void *);
+        MaterialBuilder& add_texture(std::string);
 
       private:
         std::string tag;
@@ -54,6 +55,8 @@ class Material {
         std::vector<ResourceInfo> resources;
         unsigned int storageCount = 0;
         unsigned int uniformCount = 0;
+
+        std::vector<std::string> textures;
 
         unsigned int constantsSize = 0;
         void * constants = nullptr;
@@ -76,6 +79,17 @@ class Material {
 
       const vk::raii::PipelineLayout& get_gLayout() const { return vk_gLayout; }
       const vk::raii::Pipeline& get_gPipeline() const { return vk_gPipeline; }
+      const std::vector<vk::raii::DescriptorSetLayout>& get_dsLayouts() const { return vk_dsLayouts; }
+      const vk::raii::DescriptorPool& get_descriptorPool() const { return vk_descriptorPool; }
+      const vk::raii::DescriptorSets& get_descriptorSets() const { return vk_descriptorSets; }
+      const vk::raii::DeviceMemory& get_texMemory() const { return vk_texMemory; }
+      const std::vector<vk::raii::Image>& get_images() const { return vk_images; }
+      const std::vector<vk::raii::ImageView>& get_views() const { return vk_imageViews; }
+      const std::vector<vk::raii::Sampler>& get_samplers() const { return vk_samplers; }
+      const vk::raii::DeviceMemory& get_bufMemory() const { return vk_bufMemory; }
+      const std::vector<vk::raii::Buffer>& get_buffers() const { return vk_buffers; }
+      const unsigned int& get_constantsSize() const { return constantsSize; }
+      const void * get_constants() const { return constants; }
 
     #endif // hlvl_tests
 
@@ -94,15 +108,20 @@ class Material {
     vk::raii::PipelineLayout vk_gLayout = nullptr;
     vk::raii::Pipeline vk_gPipeline = nullptr;
 
-    vk::raii::DeviceMemory vk_memory = nullptr;
+    std::vector<vk::raii::DescriptorSetLayout> vk_dsLayouts;
+    vk::raii::DescriptorPool vk_descriptorPool = nullptr;
+    vk::raii::DescriptorSets vk_descriptorSets = nullptr;
+
+    vk::raii::DeviceMemory vk_texMemory = nullptr;
+    std::vector<vk::raii::Image> vk_images;
+    std::vector<vk::raii::ImageView> vk_imageViews;
+    std::vector<vk::raii::Sampler> vk_samplers;
+
+    vk::raii::DeviceMemory vk_bufMemory = nullptr;
     std::vector<vk::raii::Buffer> vk_buffers;
 
     unsigned int constantsSize = 0;
     void * constants = nullptr;
-
-    vk::raii::DescriptorSetLayout vk_dsLayout = nullptr;
-    vk::raii::DescriptorPool vk_descriptorPool = nullptr;
-    vk::raii::DescriptorSets vk_descriptorSets = nullptr;
 };
 
 class Materials {

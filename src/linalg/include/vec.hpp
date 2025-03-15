@@ -41,6 +41,9 @@ class alignas(
 
     bool operator == (const vec&) const;
 
+    vec operator + (const vec&) const;
+    vec operator - (const vec&) const;
+    vec operator - () const;
     double operator * (const vec&) const;
     vec operator / (double) const;
 

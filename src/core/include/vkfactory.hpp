@@ -29,6 +29,20 @@ class VulkanFactory {
     vk::raii::DescriptorSets
   >;
 
+  using TextureOutput = std::tuple<
+    vk::raii::DeviceMemory,
+    std::vector<vk::raii::Image>,
+    std::vector<vk::raii::ImageView>,
+    std::vector<vk::raii::Sampler>
+  >;
+
+  using PNG = std::tuple<
+    unsigned char *,
+    unsigned int,
+    unsigned int,
+    unsigned int
+  >;
+
   public:
     VulkanFactory() = delete;
     VulkanFactory(VulkanFactory&) = delete;
@@ -42,14 +56,17 @@ class VulkanFactory {
     static AllocationOutput newAllocation(const std::vector<vk::BufferCreateInfo>&, vk::MemoryPropertyFlags);
     static CommandPoolOutput newCommandPool(QueueFamilyType, unsigned int, vk::CommandPoolCreateFlags);
     static DescriptorPoolOutput newDescriptorPool(
-      const vk::raii::DescriptorSetLayout&,
       vk::DescriptorPoolCreateFlags,
+      const std::vector<vk::raii::DescriptorSetLayout>&,
+      unsigned int,
       unsigned int,
       unsigned int
     );
+    static TextureOutput newTextureAllocation(const std::vector<std::string>&);
 
   private:
     static unsigned int findMemoryIndex(unsigned int, vk::MemoryPropertyFlags);
+    static PNG readPNG(const std::string&);
 };
 
 } // namespace hlvl

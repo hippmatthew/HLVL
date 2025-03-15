@@ -43,11 +43,18 @@ class alignas(
 
     bool operator == (const mat&) const;
 
+    mat operator + (const mat&) const;
+    mat operator - (const mat&) const;
+    mat operator - () const;
     mat operator * (const mat&) const;
     vec<N, T> operator * (const vec<N, T>&) const;
     mat operator / (double) const;
 
     static mat identity();
+    static mat<4, float> view(la::vec<3>, la::vec<3>, la::vec<3> up = la::vec<3>{ 0, 1, 0 });
+    static mat<4, float> projection(float, float, float, float);
+    static mat<4, float> rotation(la::vec<3>);
+    static mat<4, float> translation(la::vec<3>);
 
     mat transpose() const;
 

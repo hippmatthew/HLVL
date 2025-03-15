@@ -14,7 +14,7 @@ class Vertex {
     Vertex() = default;
     Vertex(const Vertex&) = default;
     Vertex(Vertex&&) = default;
-    Vertex(la::vec<3>);
+    Vertex(la::vec<3>, la::vec<2>);
 
     ~Vertex() = default;
 
@@ -26,6 +26,7 @@ class Vertex {
 
   public:
     la::vec<3> position;
+    la::vec<2> uv;
 };
 
 } // namespace hlvl

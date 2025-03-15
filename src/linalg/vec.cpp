@@ -67,6 +67,25 @@ bool vec<N, T>::operator == (const vec& rhs) const {
   return true;
 }
 
+template <unsigned int N, typename T>
+vec<N, T> vec<N, T>::operator + (const vec& rhs) const {
+  vec res;
+  for (unsigned int i = 0; i < N; ++i)
+    res[i] = data[i] + rhs[i];
+
+  return res;
+}
+
+template <unsigned int N, typename T>
+vec<N, T> vec<N, T>::operator - (const vec& rhs) const {
+  return *this + (-rhs);
+}
+
+template <unsigned int N, typename T>
+vec<N, T> vec<N, T>::operator - () const {
+  return -1 * *this;
+}
+
 template<unsigned int N, typename T>
 double vec<N, T>::operator * (const vec& rhs) const {
   double sum = 0;

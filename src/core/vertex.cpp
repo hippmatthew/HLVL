@@ -2,8 +2,9 @@
 
 namespace hlvl {
 
-Vertex::Vertex(la::vec<3> v) {
-  position = v;
+Vertex::Vertex(la::vec<3> pos, la::vec<2> tex) {
+  position = pos;
+  uv = tex;
 }
 
 vk::VertexInputBindingDescription Vertex::binding() {
@@ -21,6 +22,12 @@ std::vector<vk::VertexInputAttributeDescription> Vertex::attributes() {
       .binding  = 0,
       .format   = vk::Format::eR32G32B32Sfloat,
       .offset   = __offsetof(Vertex, position)
+    },
+    vk::VertexInputAttributeDescription{
+      .location = 1,
+      .binding  = 0,
+      .format   = vk::Format::eR32G32Sfloat,
+      .offset   = __offsetof(Vertex, uv)
     }
   };
 }
