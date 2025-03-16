@@ -1,5 +1,6 @@
 #include "src/core/include/objects.hpp"
 #include "src/core/include/vkfactory.hpp"
+#include "src/obj/include/parser.hpp"
 
 #include <stdexcept>
 
@@ -19,6 +20,13 @@ Object::ObjectBuilder& Object::ObjectBuilder::add_indices(std::vector<unsigned i
 
 Object::ObjectBuilder& Object::ObjectBuilder::add_material(std::string tag) {
   material = tag;
+  return *this;
+}
+
+Object::ObjectBuilder& Object::ObjectBuilder::add_model(std::string path) {
+  auto [tmp_vertices, tmp_indices] = obj::ObjParser::parse(path);
+  vertices = std::move(tmp_vertices);
+  indices = std::move(tmp_indices);
   return *this;
 }
 

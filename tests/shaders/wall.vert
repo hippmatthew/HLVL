@@ -1,9 +1,13 @@
 #version 460
 
-layout(set = 1, binding = 0) uniform Matrices {
+layout(set = 0, binding = 0) uniform Matrices {
   layout(row_major) mat4 model;
   layout(row_major) mat4 view;
   layout(row_major) mat4 projection;
+};
+
+layout(push_constant) uniform push_constants {
+  vec3 color;
 };
 
 layout(location = 0) in vec3 position;

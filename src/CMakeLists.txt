@@ -4,10 +4,12 @@ find_package(PNG REQUIRED)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/core)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/linalg)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/obj)
 
 add_library(hlvl SHARED
   $<TARGET_OBJECTS:hlvl.core>
   $<TARGET_OBJECTS:hlvl.linalg>
+  $<TARGET_OBJECTS:hlvl.obj>
 )
 
 target_link_directories(hlvl PUBLIC /usr/local/lib)

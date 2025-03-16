@@ -7,6 +7,10 @@ Vertex::Vertex(la::vec<3> pos, la::vec<2> tex) {
   uv = tex;
 }
 
+bool Vertex::operator == (const Vertex& rhs) const {
+  return position == rhs.position && uv == rhs.uv;
+}
+
 vk::VertexInputBindingDescription Vertex::binding() {
   return vk::VertexInputBindingDescription{
     .binding    = 0,

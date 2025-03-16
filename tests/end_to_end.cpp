@@ -21,26 +21,6 @@ TEST_CASE( "end_to_end", "[endtoend]" ) {
     la::vec<3> value = { 0, 1, 0 };
   };
 
-  std::vector<hlvl::Vertex> vertices = {
-    {{ 0.5, 0.5, 0.5 }, { 1.0, 1.0 }},
-    {{ 0.5, -0.5, 0.5 }, { 1.0, 0.0 }},
-    {{ -0.5, -0.5, 0.5 }, { 0.0, 0.0 }},
-    {{ -0.5, 0.5, 0.5 }, { 0.0, 1.0 }},
-    {{ 0.5, 0.5, -0.5 }, { 1.0, 1.0 }},
-    {{ 0.5, -0.5, -0.5 }, { 1.0, 0.0 }},
-    {{ -0.5, -0.5, -0.5 }, { 0.0, 0.0 }},
-    {{ -0.5, 0.5, -0.5 }, { 0.0, 1.0 }}
-  };
-
-  std::vector<unsigned int> indices = {
-    0, 1, 2, 2, 3, 0,
-    4, 0, 3, 3, 7, 4,
-    5, 4, 7, 7, 6, 5,
-    1, 5, 6, 6, 2, 1,
-    4, 5, 1, 1, 0, 4,
-    6, 7, 3, 3, 2, 6
-  };
-
   hlvl::Context context;
 
   REQUIRE( context.get_window() != nullptr );
@@ -51,13 +31,14 @@ TEST_CASE( "end_to_end", "[endtoend]" ) {
   REQUIRE( !context.get_queueFamilies().empty() );
 
   hlvl::Resource rectMatrices(Matrices{});
-  hlvl::Resource wallMatrices(Matrices{});
+  hlvl::Resource wallMatrices(Matrices{ .model = la::mat<4>::scale({ 3, 2, 1 }) });
   Color color;
 
   hlvl_materials.create(
-    hlvl::Material::builder("rectangle")
-      .add_shader(vk::ShaderStageFlagBits::eVertex, "shaders/rectangle.vert.spv")
-      .add_shader(vk::ShaderStageFlagBits::eFragment, "shaders/rectangle.frag.spv")
+    hlvl::Material::builder("cube")
+      .add_shader(vk::ShaderStageFlagBits::eVertex, "shaders/cube.vert.spv")
+      .add_shader(vk::ShaderStageFlagBits::eFragment, "shaders/cube.frag.spv")
+      .add_texture("../tests/dat/eggplant.png")
       .add_resource(hlvl::ResourceInfo{
         .type     = hlvl::BufferType::Uniform,
         .stages   = vk::ShaderStageFlagBits::eVertex,
@@ -67,39 +48,39 @@ TEST_CASE( "end_to_end", "[endtoend]" ) {
   );
 
   REQUIRE( hlvl_materials.count() == 1 );
-  REQUIRE( *hlvl_materials["rectangle"].get_gLayout() != nullptr );
-  REQUIRE( *hlvl_materials["rectangle"].get_gPipeline() != nullptr );
-  REQUIRE( !hlvl_materials["rectangle"].get_dsLayouts().empty() );
-  REQUIRE( *hlvl_materials["rectangle"].get_descriptorPool() != nullptr );
-  REQUIRE( !hlvl_materials["rectangle"].get_descriptorSets().empty() );
-  REQUIRE( *hlvl_materials["rectangle"].get_texMemory() == nullptr );
-  REQUIRE( hlvl_materials["rectangle"].get_images().empty() );
-  REQUIRE( hlvl_materials["rectangle"].get_views().empty() );
-  REQUIRE( hlvl_materials["rectangle"].get_samplers().empty() );
-  REQUIRE( *hlvl_materials["rectangle"].get_bufMemory() != nullptr );
-  REQUIRE( !hlvl_materials["rectangle"].get_buffers().empty() );
-  REQUIRE( hlvl_materials["rectangle"].get_constantsSize() != 0 );
-  REQUIRE( hlvl_materials["rectangle"].get_constants() != nullptr );
+  REQUIRE( *hlvl_materials["cube"].get_gLayout() != nullptr );
+  REQUIRE( *hlvl_materials["cube"].get_gPipeline() != nullptr );
+  REQUIRE( !hlvl_materials["cube"].get_dsLayouts().empty() );
+  REQUIRE( *hlvl_materials["cube"].get_descriptorPool() != nullptr );
+  REQUIRE( !hlvl_materials["cube"].get_descriptorSets().empty() );
+  REQUIRE( *hlvl_materials["cube"].get_texMemory() != nullptr );
+  REQUIRE( !hlvl_materials["cube"].get_images().empty() );
+  REQUIRE( !hlvl_materials["cube"].get_views().empty() );
+  REQUIRE( !hlvl_materials["cube"].get_samplers().empty() );
+  REQUIRE( *hlvl_materials["cube"].get_bufMemory() != nullptr );
+  REQUIRE( !hlvl_materials["cube"].get_buffers().empty() );
+  REQUIRE( hlvl_materials["cube"].get_constantsSize() != 0 );
+  REQUIRE( hlvl_materials["cube"].get_constants() != nullptr );
 
   hlvl_materials.create(
     hlvl::Material::builder("wall")
       .add_shader(vk::ShaderStageFlagBits::eVertex, "shaders/wall.vert.spv")
       .add_shader(vk::ShaderStageFlagBits::eFragment, "shaders/wall.frag.spv")
-      .add_texture("../tests/img/test.png")
       .add_resource({
         .type     = hlvl::BufferType::Uniform,
         .stages   = vk::ShaderStageFlagBits::eVertex,
         .resource = &wallMatrices
       })
+      .add_constants(sizeof(Color), &color)
   );
 
   hlvl_objects.add(
     hlvl::Object::builder()
       .add_vertices({
-        {{ -1.0, -1.0, 0.0 }, { 0.0, 0.0 }},
-        {{ -1.0, 1.0, 0.0 }, { 0.0, 1.0 }},
-        {{ 1.0, 1.0, 0.0 }, { 1.0, 1.0 }},
-        {{ 1.0, -1.0, 0.0 }, { 1.0, 0.0 }}
+        {{ -0.5, -0.5, 0.0 }, { 0.0, 0.0 }},
+        {{ -0.5, 0.5, 0.0 }, { 0.0, 1.0 }},
+        {{ 0.5, 0.5, 0.0 }, { 1.0, 1.0 }},
+        {{ 0.5, -0.5, 0.0 }, { 1.0, 0.0 }}
       })
       .add_indices({ 0, 1, 2, 2, 3, 0 })
       .add_material("wall")
@@ -107,9 +88,8 @@ TEST_CASE( "end_to_end", "[endtoend]" ) {
 
   hlvl_objects.add(
     hlvl::Object::builder()
-      .add_vertices(vertices)
-      .add_indices(indices)
-      .add_material("rectangle")
+      .add_model("../tests/dat/cube.obj")
+      .add_material("cube")
   );
 
   auto prevTime = std::chrono::steady_clock::now();

@@ -21,6 +21,8 @@ class Vertex {
     Vertex& operator = (const Vertex&) = default;
     Vertex& operator = (Vertex&&) = default;
 
+    bool operator == (const Vertex&) const;
+
     static vk::VertexInputBindingDescription binding();
     static std::vector<vk::VertexInputAttributeDescription> attributes();
 

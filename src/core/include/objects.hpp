@@ -28,6 +28,7 @@ class Object {
         ObjectBuilder& add_vertices(std::vector<Vertex>);
         ObjectBuilder& add_indices(std::vector<unsigned int>);
         ObjectBuilder& add_material(std::string);
+        ObjectBuilder& add_model(std::string);
 
       private:
         std::string material = "";
