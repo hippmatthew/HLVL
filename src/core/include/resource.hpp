@@ -1,7 +1,6 @@
 #pragma once
 
 #include "src/core/include/context.hpp"
-#include "src/core/include/settings.hpp"
 
 #include <vector>
 
@@ -76,8 +75,8 @@ class Resource : public ResourceProxy {
 
   protected:
     void initialize() override {
-      for (int i = 0; i < hlvl_settings.buffer_mode; ++i)
-        memcpy((char *)memoryMap + offsets[i], &data, sizeof(data));
+      for (auto& offset : offsets)
+        memcpy((char *)memoryMap + offset, &data, sizeof(data));
     }
 
   private:

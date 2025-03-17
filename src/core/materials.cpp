@@ -3,7 +3,6 @@
 #include "src/core/include/settings.hpp"
 #include "src/core/include/vertex.hpp"
 #include "src/core/include/vkfactory.hpp"
-#include "vulkan/vulkan_enums.hpp"
 
 #include <fstream>
 
@@ -20,19 +19,24 @@ Material::MaterialBuilder& Material::MaterialBuilder::add_shader(vk::ShaderStage
   return *this;
 }
 
+Material::MaterialBuilder& Material::MaterialBuilder::add_texture(std::string path) {
+  textures.emplace_back(path);
+  return *this;
+}
+
 Material::MaterialBuilder& Material::MaterialBuilder::add_storage(vk::ShaderStageFlagBits stages, ResourceProxy * resource) {
   sResources.emplace_back(std::make_pair(stages, resource));
+  return *this;
+}
+
+Material::MaterialBuilder& Material::MaterialBuilder::add_uniform(vk::ShaderStageFlagBits stages, ResourceProxy * resource) {
+  uResources.emplace_back(std::make_pair(stages, resource));
   return *this;
 }
 
 Material::MaterialBuilder& Material::MaterialBuilder::add_constants(unsigned int s, void * d) {
   constantsSize = s;
   constants = d;
-  return *this;
-}
-
-Material::MaterialBuilder& Material::MaterialBuilder::add_texture(std::string path) {
-  textures.emplace_back(path);
   return *this;
 }
 
@@ -45,6 +49,9 @@ Material::Material(MaterialBuilder& materialBuilder) {
 
   if (!materialBuilder.sResources.empty())
     createStorageDescriptors(materialBuilder);
+
+  if (!materialBuilder.uResources.empty())
+    createUniformDescriptors(materialBuilder);
 
   if (!(vk_images.empty() && vk_sBuffers.empty()))
     createDescriptorSets(materialBuilder);
@@ -135,6 +142,24 @@ void Material::createLayout(MaterialBuilder& materialBuilder) {
         .descriptorType   = vk::DescriptorType::eStorageBuffer,
         .descriptorCount  = 1,
         .stageFlags       = materialBuilder.sResources[i].first
+      });
+    }
+
+    vk_dsLayouts.emplace_back(Context::device().createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo{
+      .bindingCount = static_cast<unsigned int>(bindings.size()),
+      .pBindings    = bindings.data()
+    }));
+  }
+
+  if (!materialBuilder.uResources.empty()) {
+    std::vector<vk::DescriptorSetLayoutBinding> bindings;
+
+    for (unsigned int i = 0; i < materialBuilder.uResources.size(); ++i) {
+      bindings.emplace_back(vk::DescriptorSetLayoutBinding{
+        .binding          = i,
+        .descriptorType   = vk::DescriptorType::eUniformBuffer,
+        .descriptorCount  = 1,
+        .stageFlags       = materialBuilder.uResources[i].first
       });
     }
 
@@ -274,14 +299,12 @@ void Material::createTextureDescriptors(MaterialBuilder& materialBuilder) {
 
 void Material::createStorageDescriptors(MaterialBuilder& materialBuilder) {
   std::vector<vk::BufferCreateInfo> ci_buffers;
-  for (int i = 0; i < hlvl_settings.buffer_mode; ++i) {
-    for (auto& [_, resource] : materialBuilder.sResources) {
-      ci_buffers.emplace_back(vk::BufferCreateInfo{
-        .size         = resource->size,
-        .usage        = vk::BufferUsageFlagBits::eTransferSrc,
-        .sharingMode  = vk::SharingMode::eExclusive
-      });
-    }
+  for (auto& [_, resource] : materialBuilder.sResources) {
+    ci_buffers.emplace_back(vk::BufferCreateInfo{
+      .size         = resource->size,
+      .usage        = vk::BufferUsageFlagBits::eTransferSrc,
+      .sharingMode  = vk::SharingMode::eExclusive
+    });
   }
 
   auto [stagingMemory, stagingBuffers, offsets, allocationSize] = VulkanFactory::newAllocation(
@@ -294,13 +317,15 @@ void Material::createStorageDescriptors(MaterialBuilder& materialBuilder) {
   for (auto& [_, resource] : materialBuilder.sResources) {
     resource->memoryMap = memoryMap;
 
-    for (unsigned int i = 0; i < hlvl_settings.buffer_mode; ++i)
-      resource->offsets.emplace_back(offsets[i * materialBuilder.sResources.size() + index++]);
+    resource->offsets.emplace_back(offsets[index]);
     resource->initialize();
 
     resource->memoryMap = nullptr;
     resource->offsets.clear();
   }
+
+  stagingMemory.unmapMemory();
+  memoryMap = nullptr;
 
   for (auto& ci_buffer : ci_buffers)
     ci_buffer.usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst;
@@ -342,12 +367,44 @@ void Material::createStorageDescriptors(MaterialBuilder& materialBuilder) {
     throw std::runtime_error("hlvl: hung waiting for storage transfer");
 }
 
+void Material::createUniformDescriptors(MaterialBuilder& materialBuilder) {
+  std::vector<vk::BufferCreateInfo> ci_buffers;
+  for (unsigned int i = 0; i < hlvl_settings.buffer_mode; ++i) {
+    for (auto& [_, resource] : materialBuilder.uResources) {
+      ci_buffers.emplace_back(vk::BufferCreateInfo{
+        .size         = resource->size,
+        .usage        = vk::BufferUsageFlagBits::eUniformBuffer,
+        .sharingMode  = vk::SharingMode::eExclusive
+      });
+    }
+  }
+
+  auto [tmp_uMem, tmp_uBufs, offsets, allocationSize] = VulkanFactory::newAllocation(
+    ci_buffers, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
+  );
+  vk_uMemory = std::move(tmp_uMem);
+  vk_uBuffers = std::move(tmp_uBufs);
+
+  void * memoryMap = vk_uMemory.mapMemory(0, allocationSize);
+  unsigned int j = 0;
+  for (auto& [_, resource] : materialBuilder.uResources) {
+    resource->memoryMap = memoryMap;
+
+    for (unsigned int i = 0; i < hlvl_settings.buffer_mode; ++i)
+      resource->offsets.emplace_back(offsets[i * materialBuilder.uResources.size() + j]);
+    resource->initialize();
+
+    ++j;
+  }
+}
+
 void Material::createDescriptorSets(MaterialBuilder& materialBuilder) {
   auto [tmp_pool, tmp_sets] = VulkanFactory::newDescriptorPool(
     vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
     vk_dsLayouts,
     vk_images.size(),
-    materialBuilder.sResources.size()
+    materialBuilder.sResources.size(),
+    materialBuilder.uResources.size()
   );
   vk_descriptorPool = std::move(tmp_pool);
   vk_descriptorSets = std::move(tmp_sets);
@@ -374,7 +431,7 @@ void Material::createDescriptorSets(MaterialBuilder& materialBuilder) {
     unsigned int j = 0;
     for (auto& [_, resource] : materialBuilder.sResources) {
       vk::DescriptorBufferInfo bufferInfo{
-        .buffer = vk_sBuffers[i * materialBuilder.sResources.size() + j],
+        .buffer = vk_sBuffers[j],
         .range  = resource->size
       };
 
@@ -387,6 +444,22 @@ void Material::createDescriptorSets(MaterialBuilder& materialBuilder) {
       });
 
       ++j;
+    }
+
+    j = 0;
+    for (auto& [_, resource] : materialBuilder.uResources) {
+      vk::DescriptorBufferInfo bufferInfo{
+        .buffer = vk_uBuffers[i * materialBuilder.uResources.size() + j],
+        .range  = resource->size
+      };
+
+      writes.emplace_back(vk::WriteDescriptorSet{
+        .dstSet           = vk_descriptorSets[(!vk_images.empty()) + (!vk_sBuffers.empty())][i],
+        .dstBinding       = j,
+        .descriptorCount  = 1,
+        .descriptorType   = vk::DescriptorType::eUniformBuffer,
+        .pBufferInfo      = &bufferInfo
+      });
     }
   }
 

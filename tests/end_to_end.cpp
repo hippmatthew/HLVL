@@ -2,6 +2,7 @@
 #include "src/core/include/context.hpp"
 #include "src/core/include/materials.hpp"
 #include "src/core/include/objects.hpp"
+#include "src/core/include/settings.hpp"
 #include "src/linalg/include/mat.hpp"
 
 #include <catch2/catch_test_macros.hpp>
@@ -15,13 +16,13 @@ TEST_CASE( "end_to_end", "[endtoend]" ) {
     la::vec<3> colors[256];
   };
 
-  // struct Matrices {
-  //   la::mat<4> model = la::mat<4>::identity();
-  //   la::mat<4> view = la::mat<4>::view({ 0, 0, 2 }, { 0, 0, 0 }, { 0, 1, 0 });
-  //   la::mat<4> projection = la::mat<4>::projection(
-  //     3.14159 / 2, hlvl_settings.extent.width / static_cast<float>(hlvl_settings.extent.height), 0.1, 10
-  //   );
-  // };
+  struct Matrices {
+    la::mat<4> model = la::mat<4>::identity();
+    la::mat<4> view = la::mat<4>::view({ 0, 0, 2 }, { 0, 0, 0 }, { 0, 1, 0 });
+    la::mat<4> projection = la::mat<4>::projection(
+      3.14159 / 2, hlvl_settings.extent.width / static_cast<float>(hlvl_settings.extent.height), 0.1, 10
+    );
+  };
 
   struct PushConstants {
     la::vec<3> color = { 0.0, 1.0, 0.0 };
@@ -43,6 +44,7 @@ TEST_CASE( "end_to_end", "[endtoend]" ) {
   REQUIRE( !context.get_queueFamilies().empty() );
 
   hlvl::Resource cubeStorage(colors);
+  hlvl::Resource cubeMats(Matrices{});
 
   hlvl_materials.create(
     hlvl::Material::builder("cube")
@@ -50,20 +52,23 @@ TEST_CASE( "end_to_end", "[endtoend]" ) {
       .add_shader(vk::ShaderStageFlagBits::eFragment, "shaders/cube.frag.spv")
       .add_texture("../tests/dat/eggplant.png")
       .add_storage(vk::ShaderStageFlagBits::eFragment, &cubeStorage)
+      .add_uniform(vk::ShaderStageFlagBits::eVertex, &cubeMats)
       .add_constants(sizeof(PushConstants), &cubeConstants)
   );
 
   REQUIRE( *hlvl_materials["cube"].get_layout() != nullptr );
   REQUIRE( *hlvl_materials["cube"].get_gPipeline() != nullptr );
-  REQUIRE( hlvl_materials["cube"].get_dsLayouts().size() == 2 );
+  REQUIRE( hlvl_materials["cube"].get_dsLayouts().size() == 3 );
   REQUIRE( *hlvl_materials["cube"].get_dsPool() != nullptr );
-  REQUIRE( hlvl_materials["cube"].get_sets().size() == 2 );
+  REQUIRE( hlvl_materials["cube"].get_sets().size() == 3 );
   REQUIRE( *hlvl_materials["cube"].get_texMem() != nullptr );
   REQUIRE( hlvl_materials["cube"].get_images().size() == 1 );
   REQUIRE( hlvl_materials["cube"].get_views().size() == 1 );
   REQUIRE( hlvl_materials["cube"].get_samplers().size() == 1 );
   REQUIRE( *hlvl_materials["cube"].get_sMem() != nullptr );
-  REQUIRE( hlvl_materials["cube"].get_sBufs().size() == hlvl_settings.buffer_mode );
+  REQUIRE( hlvl_materials["cube"].get_sBufs().size() == 1 );
+  REQUIRE( *hlvl_materials["cube"].get_uMem() != nullptr );
+  REQUIRE( hlvl_materials["cube"].get_uBufs().size() == hlvl_settings.buffer_mode);
   REQUIRE( hlvl_materials["cube"].get_constantsSize() == sizeof(PushConstants) );
   REQUIRE( hlvl_materials["cube"].get_constants() != nullptr );
 
@@ -76,7 +81,7 @@ TEST_CASE( "end_to_end", "[endtoend]" ) {
   REQUIRE( *hlvl_objects.get_object(0).get_memory() != nullptr );
   REQUIRE( hlvl_objects.get_object(0).get_buffers().size() == 2 );
 
-  context.run([&cubeConstants](){
+  context.run([&cubeMats, &cubeConstants](){
     static std::chrono::time_point currTime = std::chrono::steady_clock::now();
     static std::chrono::time_point prevTime = currTime;
     static float elapsedTime = 0;
@@ -84,6 +89,10 @@ TEST_CASE( "end_to_end", "[endtoend]" ) {
     currTime = std::chrono::steady_clock::now();
     elapsedTime += std::chrono::duration<float>(currTime - prevTime).count();
     prevTime = currTime;
+
+    cubeMats = { .model =
+      la::mat<4>::rotation({ 0, -2 * elapsedTime, 0 })
+    };
 
     cubeConstants = {{
       (float)cos(1.5 * elapsedTime + 4 * std::numbers::pi / 3) + 1.0f,

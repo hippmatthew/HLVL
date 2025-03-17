@@ -33,6 +33,7 @@ class Material {
 
         MaterialBuilder& add_shader(vk::ShaderStageFlagBits, std::string);
         MaterialBuilder& add_storage(vk::ShaderStageFlagBits, ResourceProxy *);
+        MaterialBuilder& add_uniform(vk::ShaderStageFlagBits, ResourceProxy *);
         MaterialBuilder& add_constants(unsigned int, void *);
         MaterialBuilder& add_texture(std::string);
 
@@ -43,6 +44,7 @@ class Material {
 
         std::vector<std::string> textures;
         std::vector<std::pair<vk::ShaderStageFlagBits, ResourceProxy *>> sResources;
+        std::vector<std::pair<vk::ShaderStageFlagBits, ResourceProxy *>> uResources;
 
         unsigned int constantsSize = 0;
         void * constants = nullptr;
@@ -74,6 +76,8 @@ class Material {
       const std::vector<vk::raii::Sampler>& get_samplers() const { return vk_samplers; }
       const vk::raii::DeviceMemory& get_sMem() const { return vk_sMemory; }
       const std::vector<vk::raii::Buffer>& get_sBufs() const { return vk_sBuffers; }
+      const vk::raii::DeviceMemory& get_uMem() const { return vk_uMemory; }
+      const std::vector<vk::raii::Buffer>& get_uBufs() const { return vk_uBuffers; }
       const unsigned int& get_constantsSize() const { return constantsSize; }
       const void * get_constants() const { return constants; }
 
@@ -90,6 +94,7 @@ class Material {
     void createGraphicsPipeline(MaterialBuilder&);
     void createTextureDescriptors(MaterialBuilder&);
     void createStorageDescriptors(MaterialBuilder&);
+    void createUniformDescriptors(MaterialBuilder&);
     void createDescriptorSets(MaterialBuilder&);
 
   private:
@@ -107,6 +112,9 @@ class Material {
 
     vk::raii::DeviceMemory vk_sMemory = nullptr;
     std::vector<vk::raii::Buffer> vk_sBuffers;
+
+    vk::raii::DeviceMemory vk_uMemory = nullptr;
+    std::vector<vk::raii::Buffer> vk_uBuffers;
 
     unsigned int constantsSize = 0;
     void * constants = nullptr;

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "src/core/include/context.hpp"
-#include "vulkan/vulkan_enums.hpp"
 
 #include <vulkan/vulkan_raii.hpp>
 #include <vulkan/vulkan_beta.h>
@@ -64,6 +63,7 @@ class VulkanFactory {
     static DescriptorPoolOutput newDescriptorPool(
       vk::DescriptorPoolCreateFlags,
       const std::vector<vk::raii::DescriptorSetLayout>&,
+      unsigned int,
       unsigned int,
       unsigned int
     );

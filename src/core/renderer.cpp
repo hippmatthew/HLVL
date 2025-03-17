@@ -3,7 +3,6 @@
 #include "src/core/include/renderer.hpp"
 #include "src/core/include/settings.hpp"
 #include "src/core/include/vkfactory.hpp"
-#include "vulkan/vulkan_enums.hpp"
 
 #include <algorithm>
 #include <limits>

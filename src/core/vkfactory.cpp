@@ -1,6 +1,4 @@
 #include "src/core/include/settings.hpp"
-#include "vulkan/vulkan_enums.hpp"
-#include "vulkan/vulkan_raii.hpp"
 #include "src/core/include/vkfactory.hpp"
 
 #include <png.h>
@@ -76,7 +74,8 @@ VulkanFactory::DescriptorPoolOutput VulkanFactory::newDescriptorPool(
   vk::DescriptorPoolCreateFlags flags,
   const std::vector<vk::raii::DescriptorSetLayout>& vk_dsLayouts,
   unsigned int texCount,
-  unsigned int sCount
+  unsigned int sCount,
+  unsigned int uCount
 ) {
   vk::raii::DescriptorPool pool = nullptr;
   std::vector<vk::raii::DescriptorSets> sets;
@@ -86,20 +85,27 @@ VulkanFactory::DescriptorPoolOutput VulkanFactory::newDescriptorPool(
   if (texCount != 0) {
     poolSizes.emplace_back(vk::DescriptorPoolSize{
       .type             = vk::DescriptorType::eCombinedImageSampler,
-      .descriptorCount  = texCount
+      .descriptorCount  = texCount * hlvl_settings.buffer_mode
     });
   }
 
   if (sCount != 0) {
     poolSizes.emplace_back(vk::DescriptorPoolSize{
       .type             = vk::DescriptorType::eStorageBuffer,
-      .descriptorCount  = sCount
+      .descriptorCount  = sCount * hlvl_settings.buffer_mode
+    });
+  }
+
+  if (uCount != 0) {
+    poolSizes.emplace_back(vk::DescriptorPoolSize{
+      .type             = vk::DescriptorType::eUniformBuffer,
+      .descriptorCount  = uCount * hlvl_settings.buffer_mode
     });
   }
 
   vk::DescriptorPoolCreateInfo ci_pool{
     .flags          = flags,
-    .maxSets        = static_cast<unsigned int>(hlvl_settings.buffer_mode * ((texCount != 0) + (sCount != 0))),
+    .maxSets        = static_cast<unsigned int>(hlvl_settings.buffer_mode * ((texCount != 0) + (sCount != 0) + (uCount != 0))),
     .poolSizeCount  = static_cast<unsigned int>(poolSizes.size()),
     .pPoolSizes     = poolSizes.data()
   };
