@@ -3,7 +3,6 @@
 #include "src/core/include/settings.hpp"
 #include "src/core/include/vertex.hpp"
 #include "src/core/include/vkfactory.hpp"
-#include "vulkan/vulkan_enums.hpp"
 
 #include <fstream>
 
@@ -21,8 +20,6 @@ Material::MaterialBuilder& Material::MaterialBuilder::add_shader(vk::ShaderStage
 }
 
 Material::MaterialBuilder& Material::MaterialBuilder::add_resource(ResourceInfo&& info) {
-  resources.emplace_back(info);
-  info.type == Uniform ? ++uniformCount : ++storageCount;
   return *this;
 }
 
@@ -38,22 +35,14 @@ Material::MaterialBuilder& Material::MaterialBuilder::add_texture(std::string pa
 }
 
 Material::Material(MaterialBuilder& materialBuilder) {
+  createLayout(materialBuilder);
   createGraphicsPipeline(materialBuilder);
 
-  if (!materialBuilder.textures.empty()) {
-    auto [tmp_texMemory, tmp_images, tmp_imageViews, tmp_samplers] =
-      VulkanFactory::newTextureAllocation(materialBuilder.textures);
-    vk_texMemory = std::move(tmp_texMemory);
-    vk_images = std::move(tmp_images);
-    vk_imageViews = std::move(tmp_imageViews);
-    vk_samplers = std::move(tmp_samplers);
-  }
+  if (!materialBuilder.textures.empty())
+    createTextureDescriptors(materialBuilder);
 
-  if (materialBuilder.storageCount != 0 || materialBuilder.uniformCount != 0)
-    createDescriptors(materialBuilder);
-
-  if (!materialBuilder.textures.empty() || materialBuilder.storageCount != 0 || materialBuilder.uniformCount != 0)
-    createDescriptorSets(materialBuilder);
+  if (!vk_images.empty())
+    createDescriptorSets();
 
   constantsSize = materialBuilder.constantsSize;
   constants = materialBuilder.constants;
@@ -111,6 +100,42 @@ Material::processShaders(MaterialBuilder& b) const {
   }
 
   return std::make_pair(std::move(modules), std::move(infos));
+}
+
+void Material::createLayout(MaterialBuilder& materialBuilder) {
+  if (!materialBuilder.textures.empty()) {
+    std::vector<vk::DescriptorSetLayoutBinding> bindings;
+
+    for (unsigned int i = 0; i < materialBuilder.textures.size(); ++i) {
+      bindings.emplace_back(vk::DescriptorSetLayoutBinding{
+        .binding          = i,
+        .descriptorType   = vk::DescriptorType::eCombinedImageSampler,
+        .descriptorCount  = 1,
+        .stageFlags       = vk::ShaderStageFlagBits::eFragment
+      });
+    }
+
+    vk_dsLayouts.emplace_back(Context::device().createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo{
+      .bindingCount = static_cast<unsigned int>(bindings.size()),
+      .pBindings    = bindings.data()
+    }));
+  }
+
+  vk::PushConstantRange pushConstants{
+    .stageFlags = vk::ShaderStageFlagBits::eAllGraphics | vk::ShaderStageFlagBits::eCompute,
+    .size       = materialBuilder.constantsSize
+  };
+
+  std::vector<vk::DescriptorSetLayout> layouts;
+  for (const auto& vk_dsLayout : vk_dsLayouts)
+    layouts.emplace_back(vk_dsLayout);
+
+  vk_Layout = Context::device().createPipelineLayout(vk::PipelineLayoutCreateInfo{
+    .setLayoutCount         = static_cast<unsigned int>(layouts.size()),
+    .pSetLayouts            = layouts.data(),
+    .pushConstantRangeCount = materialBuilder.constantsSize != 0,
+    .pPushConstantRanges    = &pushConstants
+  });
 }
 
 void Material::createGraphicsPipeline(MaterialBuilder& materialBuilder) {
@@ -189,69 +214,6 @@ void Material::createGraphicsPipeline(MaterialBuilder& materialBuilder) {
     .pAttachments     = &colorAttachment
   };
 
-  std::vector<vk::DescriptorSetLayoutCreateInfo> ci_dsLayouts;
-  std::vector<std::vector<vk::DescriptorSetLayoutBinding>> bindings;
-
-  if (!materialBuilder.textures.empty()) {
-    bindings.emplace_back(std::vector<vk::DescriptorSetLayoutBinding>{});
-    unsigned int binding = 0;
-
-    for (const auto& texture : materialBuilder.textures) {
-      bindings[0].emplace_back(vk::DescriptorSetLayoutBinding{
-        .binding          = binding++,
-        .descriptorType   = vk::DescriptorType::eCombinedImageSampler,
-        .descriptorCount  = 1,
-        .stageFlags       = vk::ShaderStageFlagBits::eFragment,
-      });
-    }
-
-    ci_dsLayouts.emplace_back(vk::DescriptorSetLayoutCreateInfo{
-      .bindingCount = binding,
-      .pBindings    = bindings[0].data()
-    });
-  }
-
-  if (!materialBuilder.resources.empty()) {
-    bindings.emplace_back(std::vector<vk::DescriptorSetLayoutBinding>{});
-    unsigned int binding = 0;
-
-    for (const auto& resource : materialBuilder.resources) {
-      bindings[bindings.size() - 1].emplace_back(vk::DescriptorSetLayoutBinding{
-        .binding          = binding++,
-        .descriptorType   = resource.type == Uniform ?
-                            vk::DescriptorType::eUniformBuffer : vk::DescriptorType::eStorageBuffer,
-        .descriptorCount  = 1,
-        .stageFlags       = resource.stages
-      });
-    }
-
-    ci_dsLayouts.emplace_back(vk::DescriptorSetLayoutCreateInfo{
-      .bindingCount = binding,
-      .pBindings    = bindings[bindings.size() - 1].data()
-    });
-  }
-
-  std::vector<vk::DescriptorSetLayout> layouts;
-  for (const auto& ci_dsLayout : ci_dsLayouts) {
-    vk_dsLayouts.emplace_back(Context::device().createDescriptorSetLayout(ci_dsLayout));
-    layouts.emplace_back(*vk_dsLayouts[vk_dsLayouts.size() - 1]);
-  }
-
-  vk::PushConstantRange range{
-    .stageFlags = vk::ShaderStageFlagBits::eAllGraphics,
-    .offset     = 0,
-    .size       = materialBuilder.constantsSize
-  };
-
-  vk::PipelineLayoutCreateInfo ci_layout{
-    .setLayoutCount         = static_cast<unsigned int>(layouts.size()),
-    .pSetLayouts            = layouts.data(),
-    .pushConstantRangeCount = materialBuilder.constantsSize != 0,
-    .pPushConstantRanges    = &range
-  };
-
-  vk_gLayout = Context::device().createPipelineLayout(ci_layout);
-
   vk::PipelineRenderingCreateInfo ci_rendering{
     .colorAttachmentCount = 1,
     .pColorAttachmentFormats = &hlvl_settings.format,
@@ -270,97 +232,48 @@ void Material::createGraphicsPipeline(MaterialBuilder& materialBuilder) {
     .pDepthStencilState   = &ci_depth,
     .pColorBlendState     = &ci_blend,
     .pDynamicState        = &ci_dynamicState,
-    .layout               = vk_gLayout
+    .layout               = vk_Layout
   };
 
   vk_gPipeline = Context::device().createGraphicsPipeline(nullptr, ci_gPipeline);
 }
 
-void Material::createDescriptors(MaterialBuilder& materialBuilder) {
-  std::vector<vk::BufferCreateInfo> bufferInfos;
-  for (unsigned int i = 0; i < hlvl_settings.buffer_mode; ++i) {
-    for (const auto& resource : materialBuilder.resources) {
-      bufferInfos.emplace_back(vk::BufferCreateInfo{
-        .size = resource.resource->size,
-        .usage = static_cast<vk::BufferUsageFlagBits>(resource.type),
-        .sharingMode = vk::SharingMode::eExclusive
-      });
-    }
-  }
-
-  auto [tmp_memory, tmp_buffers, offsets, allocationSize] = VulkanFactory::newAllocation(
-    bufferInfos,vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
+void Material::createTextureDescriptors(MaterialBuilder& materialBuilder) {
+  auto [tmp_memory, tmp_images, tmp_views, tmp_samplers] = VulkanFactory::newTextureAllocation(
+    materialBuilder.textures
   );
-  vk_bufMemory = std::move(tmp_memory);
-  vk_buffers = std::move(tmp_buffers);
 
-  void * memoryMap = vk_bufMemory.mapMemory(0, allocationSize);
-  unsigned int index = 0;
-  for (auto& resource : materialBuilder.resources) {
-    resource.resource->memoryMap = memoryMap;
-
-    for (int i = 0; i < hlvl_settings.buffer_mode; ++i)
-      resource.resource->offsets.emplace_back(offsets[i * materialBuilder.resources.size() + index]);
-    resource.resource->initialize();
-
-    ++index;
-  }
+  vk_texMemory = std::move(tmp_memory);
+  vk_images = std::move(tmp_images);
+  vk_imageViews = std::move(tmp_views);
+  vk_samplers = std::move(tmp_samplers);
 }
 
-void Material::createDescriptorSets(MaterialBuilder& materialBuilder) {
-  auto [tmp_descriptorPool, tmp_descriptorSets] = VulkanFactory::newDescriptorPool(
-    vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
-    vk_dsLayouts,
-    materialBuilder.textures.size(),
-    materialBuilder.storageCount,
-    materialBuilder.uniformCount
+void Material::createDescriptorSets() {
+  auto [tmp_pool, tmp_sets] = VulkanFactory::newDescriptorPool(
+    vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, vk_dsLayouts, vk_images.size()
   );
-  vk_descriptorPool = std::move(tmp_descriptorPool);
-  vk_descriptorSets = std::move(tmp_descriptorSets);
+  vk_descriptorPool = std::move(tmp_pool);
+  vk_descriptorSets = std::move(tmp_sets);
 
   std::vector<vk::WriteDescriptorSet> writes;
 
-  unsigned int index = 0;
-  for (const auto& vk_image : vk_images) {
-    for (unsigned int i = 0; i < hlvl_settings.buffer_mode; ++i) {
+  for (unsigned int i = 0; i < hlvl_settings.buffer_mode; ++i) {
+    for (unsigned int j = 0; j < vk_images.size(); ++j) {
       vk::DescriptorImageInfo imageInfo{
-        .sampler      = vk_samplers[index],
-        .imageView    = vk_imageViews[index],
+        .sampler      = vk_samplers[j],
+        .imageView    = vk_imageViews[j],
         .imageLayout  = vk::ImageLayout::eShaderReadOnlyOptimal
       };
 
       writes.emplace_back(vk::WriteDescriptorSet{
         .dstSet           = vk_descriptorSets[i],
-        .dstBinding       = index,
-        .dstArrayElement  = 0,
+        .dstBinding       = j,
         .descriptorCount  = 1,
         .descriptorType   = vk::DescriptorType::eCombinedImageSampler,
         .pImageInfo       = &imageInfo
       });
     }
-    ++index;
-  }
-
-  index = 0;
-  for (const auto& resource : materialBuilder.resources) {
-    for (unsigned int i = 0; i < hlvl_settings.buffer_mode; ++i) {
-      vk::DescriptorBufferInfo bufferInfo{
-        .buffer = vk_buffers[i * materialBuilder.resources.size() + index],
-        .offset = 0,
-        .range = resource.resource->size
-      };
-
-      writes.emplace_back(vk::WriteDescriptorSet{
-        .dstSet           = vk_descriptorSets[hlvl_settings.buffer_mode * (!materialBuilder.textures.empty()) + i],
-        .dstBinding       = index,
-        .dstArrayElement  = 0,
-        .descriptorCount  = 1,
-        .descriptorType   = resource.type == Uniform ?
-                              vk::DescriptorType::eUniformBuffer : vk::DescriptorType::eStorageBuffer,
-        .pBufferInfo      = &bufferInfo
-      });
-    }
-    ++index;
   }
 
   Context::device().updateDescriptorSets(writes, nullptr);

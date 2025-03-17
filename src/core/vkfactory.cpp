@@ -75,9 +75,7 @@ VulkanFactory::CommandPoolOutput VulkanFactory::newCommandPool(
 VulkanFactory::DescriptorPoolOutput VulkanFactory::newDescriptorPool(
   vk::DescriptorPoolCreateFlags flags,
   const std::vector<vk::raii::DescriptorSetLayout>& vk_dsLayouts,
-  unsigned int texCount,
-  unsigned int storageCount,
-  unsigned int uniformCount
+  unsigned int texCount
 ) {
   vk::raii::DescriptorPool pool = nullptr;
   vk::raii::DescriptorSets sets = nullptr;
@@ -91,25 +89,9 @@ VulkanFactory::DescriptorPoolOutput VulkanFactory::newDescriptorPool(
     });
   }
 
-  if (storageCount != 0) {
-    poolSizes.emplace_back(vk::DescriptorPoolSize{
-      .type             = vk::DescriptorType::eStorageBuffer,
-      .descriptorCount  = storageCount
-    });
-  }
-
-  if (uniformCount != 0) {
-    poolSizes.emplace_back(vk::DescriptorPoolSize{
-      .type             = vk::DescriptorType::eUniformBuffer,
-      .descriptorCount  = uniformCount
-    });
-  }
-
-  unsigned int setCount = hlvl_settings.buffer_mode * ((storageCount + uniformCount != 0) + (texCount != 0));
-
   vk::DescriptorPoolCreateInfo ci_pool{
     .flags          = flags,
-    .maxSets        = setCount,
+    .maxSets        = hlvl_settings.buffer_mode,
     .poolSizeCount  = static_cast<unsigned int>(poolSizes.size()),
     .pPoolSizes     = poolSizes.data()
   };
@@ -117,19 +99,12 @@ VulkanFactory::DescriptorPoolOutput VulkanFactory::newDescriptorPool(
   pool = Context::device().createDescriptorPool(ci_pool);
 
   std::vector<vk::DescriptorSetLayout> layouts;
-  layouts.resize(setCount);
-
-  for (unsigned int i = 0; i < hlvl_settings.buffer_mode; ++i) {
-    if (texCount != 0)
-      layouts[i] = *vk_dsLayouts[0];
-
-    if (storageCount + uniformCount != 0)
-      layouts[hlvl_settings.buffer_mode * (texCount != 0) + i] = *vk_dsLayouts[texCount != 0];
-  }
+  for (unsigned int i = 0; i < hlvl_settings.buffer_mode; ++i)
+    layouts.emplace_back(vk_dsLayouts[0]);
 
   vk::DescriptorSetAllocateInfo setInfo{
     .descriptorPool     = pool,
-    .descriptorSetCount = setCount,
+    .descriptorSetCount = hlvl_settings.buffer_mode,
     .pSetLayouts        = layouts.data()
   };
 

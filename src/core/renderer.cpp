@@ -289,26 +289,19 @@ void Renderer::renderObject(const Object& object) {
   vk_commandBuffers[frameIndex].bindPipeline(vk::PipelineBindPoint::eGraphics, material.vk_gPipeline);
 
   if (!material.vk_descriptorSets.empty()) {
-    std::vector<vk::DescriptorSet> sets;
-    if (!material.vk_images.empty())
-      sets.emplace_back(material.vk_descriptorSets[frameIndex]);
-
-    if (!material.vk_buffers.empty())
-      sets.emplace_back(material.vk_descriptorSets[hlvl_settings.buffer_mode * (!material.vk_images.empty()) + frameIndex]);
-
     vk_commandBuffers[frameIndex].bindDescriptorSets(
       vk::PipelineBindPoint::eGraphics,
-      material.vk_gLayout,
+      material.vk_Layout,
       0,
-      sets,
+      *material.vk_descriptorSets[frameIndex],
       nullptr
     );
   }
 
   if (material.constants != nullptr) {
     vk_commandBuffers[frameIndex].pushConstants(
-      material.vk_gLayout,
-      vk::ShaderStageFlagBits::eAllGraphics,
+      material.vk_Layout,
+      vk::ShaderStageFlagBits::eAllGraphics | vk::ShaderStageFlagBits::eCompute,
       0,
       vk::ArrayProxy<const char>(material.constantsSize, reinterpret_cast<const char *>(material.constants))
     );

@@ -64,8 +64,6 @@ class VulkanFactory {
     static DescriptorPoolOutput newDescriptorPool(
       vk::DescriptorPoolCreateFlags,
       const std::vector<vk::raii::DescriptorSetLayout>&,
-      unsigned int,
-      unsigned int,
       unsigned int
     );
     static TextureOutput newTextureAllocation(const std::vector<std::string>&);

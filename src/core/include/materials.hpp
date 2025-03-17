@@ -52,10 +52,6 @@ class Material {
 
         std::map<vk::ShaderStageFlagBits, std::string> shaderMap;
 
-        std::vector<ResourceInfo> resources;
-        unsigned int storageCount = 0;
-        unsigned int uniformCount = 0;
-
         std::vector<std::string> textures;
 
         unsigned int constantsSize = 0;
@@ -77,21 +73,19 @@ class Material {
 
     #ifdef hlvl_tests
 
-      const vk::raii::PipelineLayout& get_gLayout() const { return vk_gLayout; }
+      const vk::raii::PipelineLayout& get_layout() const { return vk_Layout; }
       const vk::raii::Pipeline& get_gPipeline() const { return vk_gPipeline; }
       const std::vector<vk::raii::DescriptorSetLayout>& get_dsLayouts() const { return vk_dsLayouts; }
-      const vk::raii::DescriptorPool& get_descriptorPool() const { return vk_descriptorPool; }
-      const vk::raii::DescriptorSets& get_descriptorSets() const { return vk_descriptorSets; }
-      const vk::raii::DeviceMemory& get_texMemory() const { return vk_texMemory; }
+      const vk::raii::DescriptorPool& get_dsPool() const { return vk_descriptorPool; }
+      const vk::raii::DescriptorSets& get_sets() const { return vk_descriptorSets; }
+      const vk::raii::DeviceMemory& get_texMem() const { return vk_texMemory; }
       const std::vector<vk::raii::Image>& get_images() const { return vk_images; }
       const std::vector<vk::raii::ImageView>& get_views() const { return vk_imageViews; }
       const std::vector<vk::raii::Sampler>& get_samplers() const { return vk_samplers; }
-      const vk::raii::DeviceMemory& get_bufMemory() const { return vk_bufMemory; }
-      const std::vector<vk::raii::Buffer>& get_buffers() const { return vk_buffers; }
       const unsigned int& get_constantsSize() const { return constantsSize; }
       const void * get_constants() const { return constants; }
 
-    #endif // hlvl_tests
+    #endif
 
   private:
     std::vector<char> read(std::string) const;
@@ -100,12 +94,13 @@ class Material {
       std::vector<vk::PipelineShaderStageCreateInfo>
     > processShaders(MaterialBuilder&) const;
 
+    void createLayout(MaterialBuilder&);
     void createGraphicsPipeline(MaterialBuilder&);
-    void createDescriptors(MaterialBuilder&);
-    void createDescriptorSets(MaterialBuilder&);
+    void createTextureDescriptors(MaterialBuilder&);
+    void createDescriptorSets();
 
   private:
-    vk::raii::PipelineLayout vk_gLayout = nullptr;
+    vk::raii::PipelineLayout vk_Layout = nullptr;
     vk::raii::Pipeline vk_gPipeline = nullptr;
 
     std::vector<vk::raii::DescriptorSetLayout> vk_dsLayouts;
@@ -116,9 +111,6 @@ class Material {
     std::vector<vk::raii::Image> vk_images;
     std::vector<vk::raii::ImageView> vk_imageViews;
     std::vector<vk::raii::Sampler> vk_samplers;
-
-    vk::raii::DeviceMemory vk_bufMemory = nullptr;
-    std::vector<vk::raii::Buffer> vk_buffers;
 
     unsigned int constantsSize = 0;
     void * constants = nullptr;
