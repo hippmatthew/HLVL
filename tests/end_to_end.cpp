@@ -18,9 +18,9 @@ TEST_CASE( "end_to_end", "[endtoend]" ) {
 
   struct Matrices {
     la::mat<4> model = la::mat<4>::identity();
-    la::mat<4> view = la::mat<4>::view({ 0, 0, 2 }, { 0, 0, 0 }, { 0, 1, 0 });
+    la::mat<4> view = la::mat<4>::view({ 0, 0, -2 }, { 0, 0, 0 }, { 0, -1, 0 });
     la::mat<4> projection = la::mat<4>::projection(
-      3.14159 / 2, hlvl_settings.extent.width / static_cast<float>(hlvl_settings.extent.height), 0.1, 10
+      std::numbers::pi / 2, hlvl_settings.extent.width / static_cast<float>(hlvl_settings.extent.height), 0.1, 10
     );
   };
 
@@ -91,7 +91,7 @@ TEST_CASE( "end_to_end", "[endtoend]" ) {
     prevTime = currTime;
 
     cubeMats = { .model =
-      la::mat<4>::rotation({ 0, -2 * elapsedTime, 0 })
+      la::mat<4>::rotation({0, 2 * elapsedTime, 0 })
     };
 
     cubeConstants = {{

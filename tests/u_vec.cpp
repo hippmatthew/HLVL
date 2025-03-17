@@ -24,6 +24,8 @@ TEST_CASE( "dot", "[unit][vec]" ) {
 
 TEST_CASE( "cross", "[unit][vec]" ) {
   CHECK( la::vec<3>{ 1, 0, 0 }.cross(la::vec<3>{ 0, 1, 0 }) == la::vec<3>{ 0, 0, 1 } );
+  CHECK( la::vec<3>{ 0, 1, 0 }.cross(la::vec<3>{ 0, 0, 1 }) == la::vec<3>{ 1, 0, 0 });
+  CHECK( la::vec<3>{ 0, 0, 1 }.cross(la::vec<3>{ 1, 0, 0 }) == la::vec<3>{ 0, 1, 0 });
 }
 
 TEST_CASE( "magnitude", "[unit][vec]" ) {

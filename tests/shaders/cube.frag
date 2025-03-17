@@ -22,6 +22,6 @@ void main() {
     fragColor = vec4(color, 1.0);
   }
   else {
-    fragColor = texture(image, uv) * vec4(colors[index], 1.0);
+    fragColor = vec4(colors[index], 1.0);
   }
 }

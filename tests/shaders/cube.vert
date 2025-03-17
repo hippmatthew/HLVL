@@ -1,6 +1,6 @@
 #version 460
 
-layout(set = 2, binding = 0) uniform Matrices {
+layout(std140, set = 2, binding = 0) uniform Matrices {
   layout(row_major) mat4 model;
   layout(row_major) mat4 view;
   layout(row_major) mat4 projection;

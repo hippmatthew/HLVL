@@ -130,15 +130,17 @@ mat<N, T> mat<N, T>::identity() {
 
 template <unsigned int N, typename T>
 mat<4, float> mat<N, T>::view(la::vec<3> eye, la::vec<3> target, la::vec<3> up) {
-  la::vec<3> f = (target - eye).normalized();
-  la::vec<3> r = f.cross(up).normalized();
-  la::vec<3> u = r.cross(f);
+  la::vec<3> u, v, w;
+
+  w = (target - eye).normalized();
+  u = w.cross(up).normalized();
+  v = w.cross(u);
 
   return mat<4, float>{
-    {  r[0],  r[1],  r[2], static_cast<float>(-r * eye) },
-    {  u[0],  u[1],  u[2], static_cast<float>(-u * eye) },
-    { -f[0], -f[1], -f[2], static_cast<float>(f * eye)  },
-    {   0  ,   0  ,   0  ,             1                }
+    { u[0], u[1], u[2], static_cast<float>(-u * eye) },
+    { v[0], v[1], v[2], static_cast<float>(-v * eye) },
+    { w[0], w[1], w[2], static_cast<float>(-w * eye)},
+    { 0, 0, 0, 1 }
   };
 }
 
@@ -150,30 +152,30 @@ mat<4, float> mat<N, T>::projection(float fov, float aspectRatio, float near, fl
   return mat<4, float>{
     { tanFOVinv / aspectRatio, 0, 0, 0 },
     { 0, tanFOVinv, 0, 0 },
-    { 0, 0, -(far + near) * fmnInv , -2 * far * near * fmnInv },
-    { 0, 0, -1, 0 }
+    { 0, 0, far * fmnInv , -far * near * fmnInv },
+    { 0, 0, 1, 0 }
   };
 }
 
 template <unsigned int N, typename T>
 mat<4, float> mat<N, T>::rotation(la::vec<3> rotator) {
   mat<4> rx = {
-    { cos(rotator[0]), 0, sin(rotator[0]), 0 },
-    { 0, 1, 0, 0 },
-    { -sin(rotator[0]), 0, cos(rotator[0]), 0 },
+    { 1, 0, 0, 0 },
+    { 0, cos(rotator[0]), -sin(rotator[0]), 0 },
+    { 0, sin(rotator[0]), cos(rotator[0]), 0 },
     { 0, 0, 0, 1 }
   };
 
   mat<4> ry = {
-    { 1, 0, 0, 0 },
-    { 0, cos(rotator[1]), sin(rotator[1]), 0 },
-    { 0, -sin(rotator[1]), cos(rotator[1]), 0 },
+    { cos(rotator[1]), 0, -sin(rotator[1]), 0 },
+    { 0, 1, 0, 0 },
+    { sin(rotator[1]), 0, cos(rotator[1]), 0 },
     { 0, 0, 0, 1 }
   };
 
   mat<4> rz = {
-    { cos(rotator[2]), sin(rotator[2]), 0, 0 },
-    { -sin(rotator[2]), cos(rotator[2]), 0, 0 },
+    { cos(rotator[2]), -sin(rotator[2]), 0, 0 },
+    { sin(rotator[2]), cos(rotator[2]), 0, 0 },
     { 0, 0, 1, 0 },
     { 0, 0, 0, 1 }
   };
