@@ -49,11 +49,23 @@ class Resource : public ResourceProxy {
     Resource& operator = (Resource&&) = default;
 
     void operator = (T& d) {
+      if (memoryMap == nullptr) {
+        throw std::runtime_error(
+          "hlvl: tried to assign data to either an uninitialized resource or a storage buffer"
+        );
+      }
+
       data = d;
       memcpy((char *)memoryMap + offsets[Context::frameIndex()], &data, sizeof(data));
     }
 
     void operator = (T&& d) {
+      if (memoryMap == nullptr) {
+        throw std::runtime_error(
+          "hlvl: tried to assign data to either a non-initialized resource or a storage buffer"
+        );
+      }
+
       data = d;
       memcpy((char *)memoryMap + offsets[Context::frameIndex()], &data, sizeof(data));
     }

@@ -75,10 +75,11 @@ VulkanFactory::CommandPoolOutput VulkanFactory::newCommandPool(
 VulkanFactory::DescriptorPoolOutput VulkanFactory::newDescriptorPool(
   vk::DescriptorPoolCreateFlags flags,
   const std::vector<vk::raii::DescriptorSetLayout>& vk_dsLayouts,
-  unsigned int texCount
+  unsigned int texCount,
+  unsigned int sCount
 ) {
   vk::raii::DescriptorPool pool = nullptr;
-  vk::raii::DescriptorSets sets = nullptr;
+  std::vector<vk::raii::DescriptorSets> sets;
 
   std::vector<vk::DescriptorPoolSize> poolSizes;
 
@@ -89,26 +90,33 @@ VulkanFactory::DescriptorPoolOutput VulkanFactory::newDescriptorPool(
     });
   }
 
+  if (sCount != 0) {
+    poolSizes.emplace_back(vk::DescriptorPoolSize{
+      .type             = vk::DescriptorType::eStorageBuffer,
+      .descriptorCount  = sCount
+    });
+  }
+
   vk::DescriptorPoolCreateInfo ci_pool{
     .flags          = flags,
-    .maxSets        = hlvl_settings.buffer_mode,
+    .maxSets        = static_cast<unsigned int>(hlvl_settings.buffer_mode * ((texCount != 0) + (sCount != 0))),
     .poolSizeCount  = static_cast<unsigned int>(poolSizes.size()),
     .pPoolSizes     = poolSizes.data()
   };
 
   pool = Context::device().createDescriptorPool(ci_pool);
 
-  std::vector<vk::DescriptorSetLayout> layouts;
-  for (unsigned int i = 0; i < hlvl_settings.buffer_mode; ++i)
-    layouts.emplace_back(vk_dsLayouts[0]);
+  for (const auto& layout : vk_dsLayouts) {
+    std::vector<vk::DescriptorSetLayout> layouts;
+    for (unsigned int i = 0; i < hlvl_settings.buffer_mode; ++i)
+      layouts.emplace_back(layout);
 
-  vk::DescriptorSetAllocateInfo setInfo{
-    .descriptorPool     = pool,
-    .descriptorSetCount = hlvl_settings.buffer_mode,
-    .pSetLayouts        = layouts.data()
-  };
-
-  sets = vk::raii::DescriptorSets(Context::device(), setInfo);
+    sets.emplace_back(vk::raii::DescriptorSets(Context::device(), vk::DescriptorSetAllocateInfo{
+      .descriptorPool     = pool,
+      .descriptorSetCount = hlvl_settings.buffer_mode,
+      .pSetLayouts        = layouts.data()
+    }));
+  }
 
   return { std::move(pool), std::move(sets) };
 }

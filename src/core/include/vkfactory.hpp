@@ -26,7 +26,7 @@ class VulkanFactory {
 
   using DescriptorPoolOutput = std::pair<
     vk::raii::DescriptorPool,
-    vk::raii::DescriptorSets
+    std::vector<vk::raii::DescriptorSets>
   >;
 
   using TextureOutput = std::tuple<
@@ -64,6 +64,7 @@ class VulkanFactory {
     static DescriptorPoolOutput newDescriptorPool(
       vk::DescriptorPoolCreateFlags,
       const std::vector<vk::raii::DescriptorSetLayout>&,
+      unsigned int,
       unsigned int
     );
     static TextureOutput newTextureAllocation(const std::vector<std::string>&);

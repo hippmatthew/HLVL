@@ -3,6 +3,7 @@
 #include "src/core/include/settings.hpp"
 #include "src/core/include/vertex.hpp"
 #include "src/core/include/vkfactory.hpp"
+#include "vulkan/vulkan_enums.hpp"
 
 #include <fstream>
 
@@ -19,7 +20,8 @@ Material::MaterialBuilder& Material::MaterialBuilder::add_shader(vk::ShaderStage
   return *this;
 }
 
-Material::MaterialBuilder& Material::MaterialBuilder::add_resource(ResourceInfo&& info) {
+Material::MaterialBuilder& Material::MaterialBuilder::add_storage(vk::ShaderStageFlagBits stages, ResourceProxy * resource) {
+  sResources.emplace_back(std::make_pair(stages, resource));
   return *this;
 }
 
@@ -41,8 +43,11 @@ Material::Material(MaterialBuilder& materialBuilder) {
   if (!materialBuilder.textures.empty())
     createTextureDescriptors(materialBuilder);
 
-  if (!vk_images.empty())
-    createDescriptorSets();
+  if (!materialBuilder.sResources.empty())
+    createStorageDescriptors(materialBuilder);
+
+  if (!(vk_images.empty() && vk_sBuffers.empty()))
+    createDescriptorSets(materialBuilder);
 
   constantsSize = materialBuilder.constantsSize;
   constants = materialBuilder.constants;
@@ -112,6 +117,24 @@ void Material::createLayout(MaterialBuilder& materialBuilder) {
         .descriptorType   = vk::DescriptorType::eCombinedImageSampler,
         .descriptorCount  = 1,
         .stageFlags       = vk::ShaderStageFlagBits::eFragment
+      });
+    }
+
+    vk_dsLayouts.emplace_back(Context::device().createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo{
+      .bindingCount = static_cast<unsigned int>(bindings.size()),
+      .pBindings    = bindings.data()
+    }));
+  }
+
+  if (!materialBuilder.sResources.empty()) {
+    std::vector<vk::DescriptorSetLayoutBinding> bindings;
+
+    for (unsigned int i = 0; i < materialBuilder.sResources.size(); ++i) {
+      bindings.emplace_back(vk::DescriptorSetLayoutBinding{
+        .binding          = i,
+        .descriptorType   = vk::DescriptorType::eStorageBuffer,
+        .descriptorCount  = 1,
+        .stageFlags       = materialBuilder.sResources[i].first
       });
     }
 
@@ -249,9 +272,82 @@ void Material::createTextureDescriptors(MaterialBuilder& materialBuilder) {
   vk_samplers = std::move(tmp_samplers);
 }
 
-void Material::createDescriptorSets() {
+void Material::createStorageDescriptors(MaterialBuilder& materialBuilder) {
+  std::vector<vk::BufferCreateInfo> ci_buffers;
+  for (int i = 0; i < hlvl_settings.buffer_mode; ++i) {
+    for (auto& [_, resource] : materialBuilder.sResources) {
+      ci_buffers.emplace_back(vk::BufferCreateInfo{
+        .size         = resource->size,
+        .usage        = vk::BufferUsageFlagBits::eTransferSrc,
+        .sharingMode  = vk::SharingMode::eExclusive
+      });
+    }
+  }
+
+  auto [stagingMemory, stagingBuffers, offsets, allocationSize] = VulkanFactory::newAllocation(
+    ci_buffers, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
+  );
+
+  void * memoryMap = stagingMemory.mapMemory(0, allocationSize);
+
+  unsigned int index = 0;
+  for (auto& [_, resource] : materialBuilder.sResources) {
+    resource->memoryMap = memoryMap;
+
+    for (unsigned int i = 0; i < hlvl_settings.buffer_mode; ++i)
+      resource->offsets.emplace_back(offsets[i * materialBuilder.sResources.size() + index++]);
+    resource->initialize();
+
+    resource->memoryMap = nullptr;
+    resource->offsets.clear();
+  }
+
+  for (auto& ci_buffer : ci_buffers)
+    ci_buffer.usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst;
+
+  auto [tmp_sMem, tmp_sBufs, _, __] = VulkanFactory::newAllocation(
+    ci_buffers, vk::MemoryPropertyFlagBits::eDeviceLocal
+  );
+  vk_sMemory = std::move(tmp_sMem);
+  vk_sBuffers = std::move(tmp_sBufs);
+
+  auto [pool, cmds] = VulkanFactory::newCommandPool(
+    Transfer, stagingBuffers.size(), vk::CommandPoolCreateFlagBits::eTransient
+  );
+
+  std::vector<vk::CommandBuffer> submissions;
+  for (unsigned int i = 0; i < cmds.size(); ++i) {
+    cmds[i].begin({});
+
+    vk::BufferCopy copy{
+      .size = materialBuilder.sResources[i % materialBuilder.sResources.size()].second->size
+    };
+
+    cmds[i].copyBuffer(stagingBuffers[i], vk_sBuffers[i], copy);
+    cmds[i].end();
+
+    submissions.emplace_back(cmds[i]);
+  }
+
+  vk::SubmitInfo submitInfo{
+    .commandBufferCount = static_cast<unsigned int>(submissions.size()),
+    .pCommandBuffers    = submissions.data()
+  };
+
+  vk::raii::Fence transferFence = Context::device().createFence({});
+
+  Context::queue(Transfer).submit(submitInfo, transferFence);
+
+  if (Context::device().waitForFences(*transferFence, true, 1000000000ul) != vk::Result::eSuccess)
+    throw std::runtime_error("hlvl: hung waiting for storage transfer");
+}
+
+void Material::createDescriptorSets(MaterialBuilder& materialBuilder) {
   auto [tmp_pool, tmp_sets] = VulkanFactory::newDescriptorPool(
-    vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, vk_dsLayouts, vk_images.size()
+    vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
+    vk_dsLayouts,
+    vk_images.size(),
+    materialBuilder.sResources.size()
   );
   vk_descriptorPool = std::move(tmp_pool);
   vk_descriptorSets = std::move(tmp_sets);
@@ -267,12 +363,30 @@ void Material::createDescriptorSets() {
       };
 
       writes.emplace_back(vk::WriteDescriptorSet{
-        .dstSet           = vk_descriptorSets[i],
+        .dstSet           = vk_descriptorSets[0][i],
         .dstBinding       = j,
         .descriptorCount  = 1,
         .descriptorType   = vk::DescriptorType::eCombinedImageSampler,
         .pImageInfo       = &imageInfo
       });
+    }
+
+    unsigned int j = 0;
+    for (auto& [_, resource] : materialBuilder.sResources) {
+      vk::DescriptorBufferInfo bufferInfo{
+        .buffer = vk_sBuffers[i * materialBuilder.sResources.size() + j],
+        .range  = resource->size
+      };
+
+      writes.emplace_back(vk::WriteDescriptorSet{
+        .dstSet           = vk_descriptorSets[!vk_images.empty()][i],
+        .dstBinding       = j,
+        .descriptorCount  = 1,
+        .descriptorType   = vk::DescriptorType::eStorageBuffer,
+        .pBufferInfo      = &bufferInfo
+      });
+
+      ++j;
     }
   }
 
