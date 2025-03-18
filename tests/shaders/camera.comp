@@ -1,0 +1,147 @@
+#version 460
+
+#define MAX_BOUNCES 10
+#define RAYS_PER_PIXEL 5
+#define INF float(1 / 0)
+#define PI 3.1415926
+
+struct Sphere {
+  float radius;
+  float emiss_str;
+  vec3 position;
+  vec3 color;
+  vec3 emiss_color;
+};
+
+struct Ray {
+  vec3 origin;
+  vec3 dir;
+};
+
+struct HitInfo {
+  bool valid;
+  float dst;
+  vec3 pos;
+  vec3 norm;
+  uint index;
+};
+
+layout(set = 0, binding = 0, rgba8) uniform image2D color_data;
+
+layout(set = 1, binding = 0) readonly buffer sphere_data {
+  uint sphere_count;
+  Sphere spheres[];
+};
+
+layout(set = 2, binding = 0) uniform camera_info {
+  layout(row_major) mat4 view;
+};
+
+layout(push_constant) uniform push_constants {
+  uvec2 screen_dims;
+  vec3 np_dims;
+};
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+float random(inout uint state) {
+  state = state * 747796405 + 2891336453;
+  uint result = ((state >> ((state >> 28) + 4)) ^ state) * 277803737;
+  result = (result >> 22) ^ result;
+  return result / 4294967295.0;
+}
+
+float normal_dist(inout uint state) {
+  float theta = 4 * PI * random(state);
+  float r = sqrt(-2 * log(random(state)));
+  return r * cos(theta);
+}
+
+vec3 direction(inout uint state, vec3 normal) {
+  vec3 dir = normalize(vec3(normal_dist(state), normal_dist(state), normal_dist(state)));
+  return dir * sign(dot(dir, normal));
+}
+
+HitInfo ray_sphere(Ray ray, Sphere sphere) {
+  HitInfo info = HitInfo(false, INF, vec3(0), vec3(0), 0);
+
+  vec3 origin = ray.origin - sphere.position;
+
+  float a = dot(ray.dir, ray.dir);
+  float b = 2 * dot(origin, ray.dir);
+  float c = dot(origin, origin) - sphere.radius * sphere.radius;
+
+  float disc = b * b - 4 * a * c;
+  if (disc < 0) return info;
+
+  float dst = -(b + sqrt(disc)) / (2 * a);
+  if (dst < 0) return info;
+
+  info.valid = true;
+  info.dst = dst;
+  info.pos = ray.origin + ray.dir * dst;
+  info.norm = normalize(info.pos - sphere.position);
+
+  return info;
+}
+
+HitInfo get_collision(Ray ray) {
+  HitInfo info = HitInfo(false, INF, vec3(0), vec3(0), 0);
+
+  for (uint i = 0; i < sphere_count; ++i) {
+    HitInfo hit = ray_sphere(ray, spheres[i]);
+
+    if (hit.valid && hit.dst < info.dst) {
+      info = hit;
+      info.index = i;
+    }
+  }
+
+  return info;
+}
+
+vec3 trace_ray(Ray ray, inout uint state) {
+  vec3 light = vec3(0.0);
+  vec3 color = vec3(1.0);
+
+  for (int i = 0; i < MAX_BOUNCES; ++i) {
+    HitInfo info = get_collision(ray);
+    if (!info.valid) break;
+
+    ray.origin = info.pos;
+    ray.dir = direction(state, info.norm);
+
+    Sphere sphere = spheres[info.index];
+
+    vec3 emission = sphere.emiss_color * sphere.emiss_str;
+    light += emission * color;
+
+    color *= sphere.color;
+  }
+
+  return light;
+}
+
+void main() {
+  ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
+  uint index = coord.y * screen_dims.x + coord.x;
+  uint state = index;
+
+  mat4 world = inverse(view);
+  vec2 uv = vec2(coord) / screen_dims;
+
+  vec3 point = vec3(uv - 0.5, 1.0) * np_dims;
+  point = (world * vec4(point, 1.0)).xyz;
+
+  Ray ray = Ray(world[3].xyz, point - world[3].xyz);
+
+  vec3 color = vec3(0);
+  for (int i = 0; i < RAYS_PER_PIXEL; ++i) {
+    color += trace_ray(ray, state);
+  }
+  color /= RAYS_PER_PIXEL;
+
+  color = (color + imageLoad(color_data, coord).rgb) / 2;
+
+  imageStore(color_data, coord, vec4(color, 1.0));
+}

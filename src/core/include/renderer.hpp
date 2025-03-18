@@ -47,9 +47,14 @@ class Renderer {
     vk::raii::CommandPool vk_commandPool = nullptr;
     vk::raii::CommandBuffers vk_commandBuffers = nullptr;
 
+    vk::raii::CommandPool vk_computePool = nullptr;
+    vk::raii::CommandBuffers vk_computeBuffers = nullptr;
+
     std::vector<vk::raii::Fence> vk_flightFences;
+    std::vector<vk::raii::Fence> vk_computeFences;
     std::vector<vk::raii::Semaphore> vk_imageSemaphores;
     std::vector<vk::raii::Semaphore> vk_renderSemaphores;
+    std::vector<vk::raii::Semaphore> vk_computeSemaphores;
 };
 
 } // namespace hlvl

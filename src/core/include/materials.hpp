@@ -32,10 +32,12 @@ class Material {
         MaterialBuilder& operator = (MaterialBuilder&&) = delete;
 
         MaterialBuilder& add_shader(vk::ShaderStageFlagBits, std::string);
-        MaterialBuilder& add_storage(vk::ShaderStageFlagBits, ResourceProxy *);
-        MaterialBuilder& add_uniform(vk::ShaderStageFlagBits, ResourceProxy *);
-        MaterialBuilder& add_constants(unsigned int, void *);
         MaterialBuilder& add_texture(std::string);
+        MaterialBuilder& add_storage(vk::ShaderStageFlags, ResourceProxy *);
+        MaterialBuilder& add_uniform(vk::ShaderStageFlags, ResourceProxy *);
+        MaterialBuilder& add_constants(unsigned int, void *);
+        MaterialBuilder& add_canvas();
+        MaterialBuilder& compute_space(unsigned int, unsigned int, unsigned int);
 
       private:
         std::string tag;
@@ -43,11 +45,15 @@ class Material {
         std::map<vk::ShaderStageFlagBits, std::string> shaderMap;
 
         std::vector<std::string> textures;
-        std::vector<std::pair<vk::ShaderStageFlagBits, ResourceProxy *>> sResources;
-        std::vector<std::pair<vk::ShaderStageFlagBits, ResourceProxy *>> uResources;
+        std::vector<std::pair<vk::ShaderStageFlags, ResourceProxy *>> sResources;
+        std::vector<std::pair<vk::ShaderStageFlags, ResourceProxy *>> uResources;
+
+        unsigned int imgCount = 0;
 
         unsigned int constantsSize = 0;
         void * constants = nullptr;
+
+        unsigned int computeSpace[3] = { 1, 1, 1 };
     };
 
   public:
@@ -91,6 +97,7 @@ class Material {
     > processShaders(MaterialBuilder&) const;
 
     void createLayout(MaterialBuilder&);
+    void createComputePipeline(MaterialBuilder&);
     void createGraphicsPipeline(MaterialBuilder&);
     void createTextureDescriptors(MaterialBuilder&);
     void createStorageDescriptors(MaterialBuilder&);
@@ -100,6 +107,7 @@ class Material {
   private:
     vk::raii::PipelineLayout vk_Layout = nullptr;
     vk::raii::Pipeline vk_gPipeline = nullptr;
+    vk::raii::Pipeline vk_cPipeline = nullptr;
 
     std::vector<vk::raii::DescriptorSetLayout> vk_dsLayouts;
     vk::raii::DescriptorPool vk_descriptorPool = nullptr;
@@ -110,6 +118,9 @@ class Material {
     std::vector<vk::raii::ImageView> vk_imageViews;
     std::vector<vk::raii::Sampler> vk_samplers;
 
+    bool hasCanvas = false;
+    unsigned int canvasIndex = 0;
+
     vk::raii::DeviceMemory vk_sMemory = nullptr;
     std::vector<vk::raii::Buffer> vk_sBuffers;
 
@@ -118,6 +129,8 @@ class Material {
 
     unsigned int constantsSize = 0;
     void * constants = nullptr;
+
+    unsigned int computeSpace[3] = { 1, 1, 1 };
 };
 
 class Materials {

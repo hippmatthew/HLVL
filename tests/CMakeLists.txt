@@ -15,8 +15,9 @@ set(TESTS_SOURCES
 )
 
 set(TESTS_SHADERS
-  ${CMAKE_CURRENT_SOURCE_DIR}/shaders/cube.frag
-  ${CMAKE_CURRENT_SOURCE_DIR}/shaders/cube.vert
+  ${CMAKE_CURRENT_SOURCE_DIR}/shaders/camera.comp
+  ${CMAKE_CURRENT_SOURCE_DIR}/shaders/camera.frag
+  ${CMAKE_CURRENT_SOURCE_DIR}/shaders/camera.vert
 )
 
 foreach(SHADER ${TESTS_SHADERS})

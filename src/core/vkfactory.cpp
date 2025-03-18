@@ -1,4 +1,6 @@
+#include "include/context.hpp"
 #include "src/core/include/settings.hpp"
+#include "vulkan/vulkan_enums.hpp"
 #include "src/core/include/vkfactory.hpp"
 
 #include <png.h>
@@ -73,7 +75,7 @@ VulkanFactory::CommandPoolOutput VulkanFactory::newCommandPool(
 VulkanFactory::DescriptorPoolOutput VulkanFactory::newDescriptorPool(
   vk::DescriptorPoolCreateFlags flags,
   const std::vector<vk::raii::DescriptorSetLayout>& vk_dsLayouts,
-  unsigned int texCount,
+  std::pair<unsigned int, unsigned int> imgCounts,
   unsigned int sCount,
   unsigned int uCount
 ) {
@@ -82,10 +84,19 @@ VulkanFactory::DescriptorPoolOutput VulkanFactory::newDescriptorPool(
 
   std::vector<vk::DescriptorPoolSize> poolSizes;
 
+  auto [texCount, imgCount] = imgCounts;
+
   if (texCount != 0) {
     poolSizes.emplace_back(vk::DescriptorPoolSize{
       .type             = vk::DescriptorType::eCombinedImageSampler,
       .descriptorCount  = texCount * hlvl_settings.buffer_mode
+    });
+  }
+
+  if (imgCount != 0) {
+    poolSizes.emplace_back(vk::DescriptorPoolSize{
+      .type             = vk::DescriptorType::eStorageImage,
+      .descriptorCount  = imgCount * hlvl_settings.buffer_mode
     });
   }
 
@@ -105,7 +116,7 @@ VulkanFactory::DescriptorPoolOutput VulkanFactory::newDescriptorPool(
 
   vk::DescriptorPoolCreateInfo ci_pool{
     .flags          = flags,
-    .maxSets        = static_cast<unsigned int>(hlvl_settings.buffer_mode * ((texCount != 0) + (sCount != 0) + (uCount != 0))),
+    .maxSets        = static_cast<unsigned int>(hlvl_settings.buffer_mode * ((texCount != 0 || imgCount != 0) + (sCount != 0) + (uCount != 0))),
     .poolSizeCount  = static_cast<unsigned int>(poolSizes.size()),
     .pPoolSizes     = poolSizes.data()
   };
@@ -127,7 +138,7 @@ VulkanFactory::DescriptorPoolOutput VulkanFactory::newDescriptorPool(
   return { std::move(pool), std::move(sets) };
 }
 
-VulkanFactory::TextureOutput VulkanFactory::newTextureAllocation(const std::vector<std::string>& paths) {
+VulkanFactory::TextureOutput VulkanFactory::newTextureAllocation(const std::vector<std::string>& paths, unsigned int imgCount) {
   vk::raii::DeviceMemory memory = nullptr;
   std::vector<vk::raii::Image> images;
   std::vector<vk::raii::ImageView> views;
@@ -163,20 +174,44 @@ VulkanFactory::TextureOutput VulkanFactory::newTextureAllocation(const std::vect
     }));
   }
 
-  auto [stagingMemory, stagingBuffers, stagingOffsets, stagingSize] = newAllocation(
-    bufferInfos, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
-  );
-
-  void * memoryMap = stagingMemory.mapMemory(0, stagingSize);
-
-  for (unsigned int i = 0; i < stagingBuffers.size(); ++i) {
-    auto [data, _, height, rowSize] = imgs[i];
-    memcpy((unsigned char *)memoryMap + stagingOffsets[i], data, height * rowSize);
-    free(data);
+  for (unsigned int i = 0; i < imgCount; ++i) {
+    images.emplace_back(Context::device().createImage(vk::ImageCreateInfo{
+      .imageType    = vk::ImageType::e2D,
+      .format       = vk::Format::eR8G8B8A8Srgb,
+      .extent       = {
+        .width  = hlvl_settings.extent.width,
+        .height = hlvl_settings.extent.height,
+        .depth  = 1
+      },
+      .mipLevels    = 1,
+      .arrayLayers  = 1,
+      .samples      = vk::SampleCountFlagBits::e1,
+      .tiling       = vk::ImageTiling::eOptimal,
+      .usage        = vk::ImageUsageFlagBits::eStorage,
+      .sharingMode  = vk::SharingMode::eExclusive
+    }));
   }
 
-  stagingMemory.unmapMemory();
-  memoryMap = nullptr;
+  vk::raii::DeviceMemory stagingMemory = nullptr;
+  std::vector<vk::raii::Buffer> stagingBuffers;
+
+  if (!paths.empty()) {
+    auto [tmp_stagingMemory, tmp_stagingBuffers, stagingOffsets, stagingSize] = newAllocation(
+      bufferInfos, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
+    );
+    stagingMemory = std::move(tmp_stagingMemory);
+    stagingBuffers = std::move(tmp_stagingBuffers);
+
+    void * memoryMap = stagingMemory.mapMemory(0, stagingSize);
+
+    for (unsigned int i = 0; i < stagingBuffers.size(); ++i) {
+      auto [data, _, height, rowSize] = imgs[i];
+      memcpy((unsigned char *)memoryMap + stagingOffsets[i], data, height * rowSize);
+      free(data);
+    }
+
+    stagingMemory.unmapMemory();
+  }
 
   unsigned int filter = ~(0x0);
   std::vector<unsigned int> offsets;
@@ -201,8 +236,9 @@ VulkanFactory::TextureOutput VulkanFactory::newTextureAllocation(const std::vect
   for (unsigned int i = 0; i < images.size(); ++i)
     images[i].bindMemory(memory, offsets[i]);
 
-  auto [commandPool, commandBuffers] = newCommandPool(
-    Transfer, images.size(), vk::CommandPoolCreateFlagBits::eTransient
+  if (!stagingBuffers.empty()) {
+    auto [commandPool, commandBuffers] = newCommandPool(
+    Transfer, stagingBuffers.size(), vk::CommandPoolCreateFlagBits::eTransient
   );
 
   unsigned int index = 0;
@@ -273,21 +309,23 @@ VulkanFactory::TextureOutput VulkanFactory::newTextureAllocation(const std::vect
     commandBuffer.end();
   }
 
-  std::vector<vk::CommandBuffer> cmds;
-  for (const auto& commandBuffer : commandBuffers)
-    cmds.emplace_back(*commandBuffer);
+    std::vector<vk::CommandBuffer> cmds;
+    for (const auto& commandBuffer : commandBuffers)
+      cmds.emplace_back(*commandBuffer);
 
-  vk::SubmitInfo submit{
-    .commandBufferCount = static_cast<unsigned int>(cmds.size()),
-    .pCommandBuffers    = cmds.data()
-  };
+    vk::SubmitInfo submit{
+      .commandBufferCount = static_cast<unsigned int>(cmds.size()),
+      .pCommandBuffers    = cmds.data()
+    };
 
-  vk::raii::Fence vk_fence = Context::device().createFence(vk::FenceCreateInfo{});
-  Context::queue(Transfer).submit(submit, vk_fence);
+    vk::raii::Fence vk_fence = Context::device().createFence(vk::FenceCreateInfo{});
+    Context::queue(Transfer).submit(submit, vk_fence);
 
-  if (Context::device().waitForFences(*vk_fence, true, 1000000000ul) != vk::Result::eSuccess)
-    throw std::runtime_error("hlvl: hung waiting for image transfer");
+    if (Context::device().waitForFences(*vk_fence, true, 1000000000ul) != vk::Result::eSuccess)
+      throw std::runtime_error("hlvl: hung waiting for image transfer");
+  }
 
+  unsigned int index = 0;
   for (const auto& image : images) {
     views.emplace_back(Context::device().createImageView(vk::ImageViewCreateInfo{
       .image      = image,
@@ -307,6 +345,8 @@ VulkanFactory::TextureOutput VulkanFactory::newTextureAllocation(const std::vect
         .layerCount     = 1
       }
     }));
+
+    if (index++ > stagingBuffers.size() - 1) continue;
 
     vk::PhysicalDeviceProperties properties = Context::physicalDevice().getProperties();
 
@@ -328,7 +368,56 @@ VulkanFactory::TextureOutput VulkanFactory::newTextureAllocation(const std::vect
     }));
   }
 
-  return { std::move(memory), std::move(images), std::move(views), std::move(samplers) };
+  if (imgCount != 0) {
+    auto [commandPool, commandBuffers] = newCommandPool(
+      Transfer, imgCount, vk::CommandPoolCreateFlagBits::eTransient
+    );
+
+    unsigned int index = stagingBuffers.size();
+
+    std::vector<vk::CommandBuffer> cmds;
+    for (auto& commandBuffer : commandBuffers) {
+      vk::ImageMemoryBarrier barrier{
+        .newLayout        = vk::ImageLayout::eGeneral,
+        .image            = images[index++],
+        .subresourceRange = {
+          .aspectMask     = vk::ImageAspectFlagBits::eColor,
+          .baseMipLevel   = 0,
+          .levelCount     = 1,
+          .baseArrayLayer = 0,
+          .layerCount     = 1
+        }
+      };
+
+      commandBuffer.begin({ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
+
+      commandBuffer.pipelineBarrier(
+        vk::PipelineStageFlagBits::eTopOfPipe,
+        vk::PipelineStageFlagBits::eComputeShader,
+        vk::DependencyFlags(),
+        nullptr,
+        nullptr,
+        barrier
+      );
+
+      commandBuffer.end();
+      cmds.emplace_back(commandBuffer);
+    }
+
+    vk::SubmitInfo barrierSubmit{
+      .commandBufferCount = static_cast<unsigned int>(cmds.size()),
+      .pCommandBuffers    = cmds.data()
+    };
+
+    vk::raii::Fence barrierFence = Context::device().createFence({});
+
+    Context::queue(Transfer).submit(barrierSubmit, barrierFence);
+
+    if (Context::device().waitForFences(*barrierFence, true, 1000000000ul) != vk::Result::eSuccess)
+      throw std::runtime_error("hlvl: hung waiting for barrier submit");
+  }
+
+  return { std::move(memory), std::move(images), std::move(views), std::move(samplers), stagingBuffers.size() };
 }
 
 VulkanFactory::DepthOutput VulkanFactory::newDepthAllocation(unsigned int imageCount) {
@@ -423,7 +512,6 @@ VulkanFactory::DepthOutput VulkanFactory::newDepthAllocation(unsigned int imageC
 
     views.emplace_back(Context::device().createImageView(ci_view));
   }
-
 
   return { std::move(memory), std::move(images), std::move(views) };
 }

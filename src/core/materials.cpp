@@ -24,12 +24,12 @@ Material::MaterialBuilder& Material::MaterialBuilder::add_texture(std::string pa
   return *this;
 }
 
-Material::MaterialBuilder& Material::MaterialBuilder::add_storage(vk::ShaderStageFlagBits stages, ResourceProxy * resource) {
+Material::MaterialBuilder& Material::MaterialBuilder::add_storage(vk::ShaderStageFlags stages, ResourceProxy * resource) {
   sResources.emplace_back(std::make_pair(stages, resource));
   return *this;
 }
 
-Material::MaterialBuilder& Material::MaterialBuilder::add_uniform(vk::ShaderStageFlagBits stages, ResourceProxy * resource) {
+Material::MaterialBuilder& Material::MaterialBuilder::add_uniform(vk::ShaderStageFlags stages, ResourceProxy * resource) {
   uResources.emplace_back(std::make_pair(stages, resource));
   return *this;
 }
@@ -40,11 +40,29 @@ Material::MaterialBuilder& Material::MaterialBuilder::add_constants(unsigned int
   return *this;
 }
 
+Material::MaterialBuilder& Material::MaterialBuilder::add_canvas() {
+  ++imgCount;
+  return *this;
+}
+
+Material::MaterialBuilder& Material::MaterialBuilder::compute_space(unsigned int x, unsigned int y, unsigned int z) {
+  computeSpace[0] = x;
+  computeSpace[1] = y;
+  computeSpace[2] = z;
+  return *this;
+}
+
 Material::Material(MaterialBuilder& materialBuilder) {
   createLayout(materialBuilder);
+
+  if (materialBuilder.shaderMap.find(vk::ShaderStageFlagBits::eCompute) != materialBuilder.shaderMap.end()) {
+    createComputePipeline(materialBuilder);
+    materialBuilder.shaderMap.erase(vk::ShaderStageFlagBits::eCompute);
+  }
+
   createGraphicsPipeline(materialBuilder);
 
-  if (!materialBuilder.textures.empty())
+  if (!(materialBuilder.textures.empty() && materialBuilder.imgCount == 0))
     createTextureDescriptors(materialBuilder);
 
   if (!materialBuilder.sResources.empty())
@@ -53,11 +71,14 @@ Material::Material(MaterialBuilder& materialBuilder) {
   if (!materialBuilder.uResources.empty())
     createUniformDescriptors(materialBuilder);
 
-  if (!(vk_images.empty() && vk_sBuffers.empty()))
+  if (!(vk_images.empty() && vk_sBuffers.empty() && vk_uBuffers.empty()))
     createDescriptorSets(materialBuilder);
 
   constantsSize = materialBuilder.constantsSize;
   constants = materialBuilder.constants;
+
+  for (unsigned int i = 0; i < 3; ++i)
+    computeSpace[i] = materialBuilder.computeSpace[i];
 }
 
 Material::MaterialBuilder Material::builder(std::string tag) {
@@ -115,15 +136,25 @@ Material::processShaders(MaterialBuilder& b) const {
 }
 
 void Material::createLayout(MaterialBuilder& materialBuilder) {
-  if (!materialBuilder.textures.empty()) {
+  if (!(materialBuilder.textures.empty() && materialBuilder.imgCount == 0)) {
     std::vector<vk::DescriptorSetLayoutBinding> bindings;
 
-    for (unsigned int i = 0; i < materialBuilder.textures.size(); ++i) {
+    unsigned int binding = 0;
+    for (; binding < materialBuilder.textures.size(); ++binding) {
       bindings.emplace_back(vk::DescriptorSetLayoutBinding{
-        .binding          = i,
+        .binding          = binding,
         .descriptorType   = vk::DescriptorType::eCombinedImageSampler,
         .descriptorCount  = 1,
         .stageFlags       = vk::ShaderStageFlagBits::eFragment
+      });
+    }
+
+    for (unsigned int i = 0; i < materialBuilder.imgCount; ++i) {
+      bindings.emplace_back(vk::DescriptorSetLayoutBinding{
+        .binding          = binding++,
+        .descriptorType   = vk::DescriptorType::eStorageImage,
+        .descriptorCount  = 1,
+        .stageFlags       = vk::ShaderStageFlagBits::eCompute | vk::ShaderStageFlagBits::eFragment
       });
     }
 
@@ -170,7 +201,7 @@ void Material::createLayout(MaterialBuilder& materialBuilder) {
   }
 
   vk::PushConstantRange pushConstants{
-    .stageFlags = vk::ShaderStageFlagBits::eAllGraphics | vk::ShaderStageFlagBits::eCompute,
+    .stageFlags = vk::ShaderStageFlagBits::eAll,
     .size       = materialBuilder.constantsSize
   };
 
@@ -186,8 +217,28 @@ void Material::createLayout(MaterialBuilder& materialBuilder) {
   });
 }
 
+void Material::createComputePipeline(MaterialBuilder& materialBuilder) {
+  std::vector<char> code = read(materialBuilder.shaderMap.at(vk::ShaderStageFlagBits::eCompute));
+
+  vk::raii::ShaderModule module = Context::device().createShaderModule(vk::ShaderModuleCreateInfo{
+    .codeSize = static_cast<unsigned int>(code.size()),
+    .pCode    = reinterpret_cast<unsigned int *>(code.data())
+  });
+
+  vk::PipelineShaderStageCreateInfo ci_stage{
+    .stage  = vk::ShaderStageFlagBits::eCompute,
+    .module = module,
+    .pName  = "main"
+  };
+
+  vk_cPipeline = Context::device().createComputePipeline(nullptr, vk::ComputePipelineCreateInfo{
+    .stage = ci_stage,
+    .layout = vk_Layout
+  });
+}
+
 void Material::createGraphicsPipeline(MaterialBuilder& materialBuilder) {
-    auto [modules, ci_stages] = processShaders(materialBuilder);
+  auto [modules, ci_stages] = processShaders(materialBuilder);
 
   vk::DynamicState dynamicStates[2] = {
     vk::DynamicState::eViewport,
@@ -287,14 +338,17 @@ void Material::createGraphicsPipeline(MaterialBuilder& materialBuilder) {
 }
 
 void Material::createTextureDescriptors(MaterialBuilder& materialBuilder) {
-  auto [tmp_memory, tmp_images, tmp_views, tmp_samplers] = VulkanFactory::newTextureAllocation(
-    materialBuilder.textures
+  auto [tmp_memory, tmp_images, tmp_views, tmp_samplers, tmp_canvasIndex] = VulkanFactory::newTextureAllocation(
+    materialBuilder.textures, materialBuilder.imgCount
   );
 
   vk_texMemory = std::move(tmp_memory);
   vk_images = std::move(tmp_images);
   vk_imageViews = std::move(tmp_views);
   vk_samplers = std::move(tmp_samplers);
+  canvasIndex = std::move(tmp_canvasIndex);
+
+  hasCanvas = materialBuilder.imgCount != 0;
 }
 
 void Material::createStorageDescriptors(MaterialBuilder& materialBuilder) {
@@ -402,7 +456,7 @@ void Material::createDescriptorSets(MaterialBuilder& materialBuilder) {
   auto [tmp_pool, tmp_sets] = VulkanFactory::newDescriptorPool(
     vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
     vk_dsLayouts,
-    vk_images.size(),
+    std::make_pair(materialBuilder.textures.size(), materialBuilder.imgCount),
     materialBuilder.sResources.size(),
     materialBuilder.uResources.size()
   );
@@ -412,7 +466,7 @@ void Material::createDescriptorSets(MaterialBuilder& materialBuilder) {
   std::vector<vk::WriteDescriptorSet> writes;
 
   for (unsigned int i = 0; i < hlvl_settings.buffer_mode; ++i) {
-    for (unsigned int j = 0; j < vk_images.size(); ++j) {
+    for (unsigned int j = 0; j < materialBuilder.textures.size(); ++j) {
       vk::DescriptorImageInfo imageInfo{
         .sampler      = vk_samplers[j],
         .imageView    = vk_imageViews[j],
@@ -428,7 +482,23 @@ void Material::createDescriptorSets(MaterialBuilder& materialBuilder) {
       });
     }
 
-    unsigned int j = 0;
+    unsigned int j = materialBuilder.textures.size();
+    for (unsigned int k = materialBuilder.textures.size(); k < vk_images.size(); ++k) {
+      vk::DescriptorImageInfo imageInfo{
+        .imageView    = vk_imageViews[k],
+        .imageLayout  = vk::ImageLayout::eGeneral
+      };
+
+      writes.emplace_back(vk::WriteDescriptorSet{
+        .dstSet           = vk_descriptorSets[0][i],
+        .dstBinding       = j++,
+        .descriptorCount  = 1,
+        .descriptorType   = vk::DescriptorType::eStorageImage,
+        .pImageInfo       = &imageInfo
+      });
+    }
+
+    j = 0;
     for (auto& [_, resource] : materialBuilder.sResources) {
       vk::DescriptorBufferInfo bufferInfo{
         .buffer = vk_sBuffers[j],

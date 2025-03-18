@@ -3,6 +3,7 @@
 #include "src/core/include/renderer.hpp"
 #include "src/core/include/settings.hpp"
 #include "src/core/include/vkfactory.hpp"
+#include "vulkan/vulkan_handles.hpp"
 
 #include <algorithm>
 #include <limits>
@@ -96,6 +97,12 @@ void Renderer::init() {
   vk_commandPool = std::move(tmp_commandPool);
   vk_commandBuffers = std::move(tmp_commandBuffers);
 
+  auto [tmp_computePool, tmp_computeBuffers] = VulkanFactory::newCommandPool(
+    Compute, hlvl_settings.buffer_mode, vk::CommandPoolCreateFlagBits::eResetCommandBuffer
+  );
+  vk_computePool = std::move(tmp_computePool);
+  vk_computeBuffers = std::move(tmp_computeBuffers);
+
   createSyncObjects();
 }
 
@@ -133,8 +140,10 @@ void Renderer::createSyncObjects() {
 
   for (unsigned int i = 0; i < hlvl_settings.buffer_mode; ++i) {
     vk_flightFences.emplace_back(Context::device().createFence(ci_fence));
+    vk_computeFences.emplace_back(Context::device().createFence(ci_fence));
     vk_imageSemaphores.emplace_back(Context::device().createSemaphore(ci_semaphore));
     vk_renderSemaphores.emplace_back(Context::device().createSemaphore(ci_semaphore));
+    vk_computeSemaphores.emplace_back(Context::device().createSemaphore(ci_semaphore));
   }
 }
 
@@ -153,16 +162,16 @@ void Renderer::render() {
     .extent = hlvl_settings.extent
   };
 
-  static vk::PipelineStageFlags waitStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+  static vk::PipelineStageFlags waitStages[2] = { vk::PipelineStageFlagBits::eVertexShader, vk::PipelineStageFlagBits::eColorAttachmentOutput };
 
-  if (Context::device().waitForFences(*vk_flightFences[frameIndex], true, 1000000000ul) != vk::Result::eSuccess)
+  if (Context::device().waitForFences({ *vk_flightFences[frameIndex], *vk_computeFences[frameIndex] }, true, 1000000000ul) != vk::Result::eSuccess)
     throw std::runtime_error("hlvl: hung waiting for flight fence");
 
   auto [res, imgIndex] = vk_swapchain.acquireNextImage(1000000000ul, vk_imageSemaphores[frameIndex], nullptr);
   if (res != vk::Result::eSuccess)
     throw std::runtime_error("hlvl: failed to get next swapchain image");
 
-  Context::device().resetFences(*vk_flightFences[frameIndex]);
+  Context::device().resetFences({ *vk_flightFences[frameIndex], *vk_computeFences[frameIndex] });
 
   if (hlvl_objects.count() == 0) return;
 
@@ -176,10 +185,20 @@ void Renderer::render() {
 
   endRendering(imgIndex);
 
+  vk::SubmitInfo computeSubmit{
+    .commandBufferCount   = 1,
+    .pCommandBuffers      = &*vk_computeBuffers[frameIndex],
+    .signalSemaphoreCount = 1,
+    .pSignalSemaphores    = &*vk_computeSemaphores[frameIndex]
+  };
+
+  Context::queue(Compute).submit(computeSubmit, vk_computeFences[frameIndex]);
+
+  vk::Semaphore waitSemaphores[2] = { *vk_computeSemaphores[frameIndex], *vk_imageSemaphores[frameIndex] };
   vk::SubmitInfo renderSubmit{
-    .waitSemaphoreCount   = 1,
-    .pWaitSemaphores      = &*vk_imageSemaphores[frameIndex],
-    .pWaitDstStageMask    = &waitStage,
+    .waitSemaphoreCount   = 2,
+    .pWaitSemaphores      = waitSemaphores,
+    .pWaitDstStageMask    = waitStages,
     .commandBufferCount   = 1,
     .pCommandBuffers      = &*vk_commandBuffers[frameIndex],
     .signalSemaphoreCount = 1,
@@ -204,8 +223,10 @@ void Renderer::render() {
 
 void Renderer::beginRendering(unsigned int imgIndex) {
   vk_commandBuffers[frameIndex].reset();
+  vk_computeBuffers[frameIndex].reset();
 
   vk_commandBuffers[frameIndex].begin(vk::CommandBufferBeginInfo{});
+  vk_computeBuffers[frameIndex].begin(vk::CommandBufferBeginInfo{});
 
   vk::ImageMemoryBarrier colorBarrier{
     .dstAccessMask    = vk::AccessFlagBits::eColorAttachmentWrite,
@@ -285,7 +306,51 @@ void Renderer::beginRendering(unsigned int imgIndex) {
 void Renderer::renderObject(const Object& object) {
   const auto& material = hlvl_materials[object.materialTag];
 
+  // if (material.hasCanvas) {
+  //   for (unsigned int i = material.canvasIndex; i < material.vk_images.size(); ++i) {
+  //     vk::ImageMemoryBarrier barrier{
+  //       .srcAccessMask    = vk::AccessFlagBits::eShaderRead,
+  //       .dstAccessMask    = vk::AccessFlagBits::eShaderWrite,
+  //       .newLayout        = vk::ImageLayout::eGeneral,
+  //       .image            = material.vk_images[i],
+  //       .subresourceRange = {
+  //         .aspectMask     = vk::ImageAspectFlagBits::eColor,
+  //         .baseMipLevel   = 0,
+  //         .levelCount     = 1,
+  //         .baseArrayLayer = 0,
+  //         .layerCount     = 1
+  //       }
+  //     };
+
+  //     vk_computeBuffers[frameIndex].pipelineBarrier(
+  //       vk::PipelineStageFlagBits::eTopOfPipe,
+  //       vk::PipelineStageFlagBits::eComputeShader,
+  //       vk::DependencyFlags(),
+  //       nullptr,
+  //       nullptr,
+  //       barrier
+  //     );
+
+  //     barrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
+  //     barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+  //     barrier.oldLayout = vk::ImageLayout::eGeneral;
+  //     barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
+  //     vk_commandBuffers[frameIndex].pipelineBarrier(
+  //       vk::PipelineStageFlagBits::eComputeShader,
+  //       vk::PipelineStageFlagBits::eFragmentShader,
+  //       vk::DependencyFlags(),
+  //       nullptr,
+  //       nullptr,
+  //       barrier
+  //     );
+  //   }
+  // }
+
   vk_commandBuffers[frameIndex].bindPipeline(vk::PipelineBindPoint::eGraphics, material.vk_gPipeline);
+
+  if (*material.vk_cPipeline != nullptr)
+    vk_computeBuffers[frameIndex].bindPipeline(vk::PipelineBindPoint::eCompute, material.vk_cPipeline);
 
   std::vector<vk::DescriptorSet> sets;
   for (const auto& set : material.vk_descriptorSets)
@@ -295,21 +360,42 @@ void Renderer::renderObject(const Object& object) {
     vk_commandBuffers[frameIndex].bindDescriptorSets(
       vk::PipelineBindPoint::eGraphics, material.vk_Layout, 0, sets, nullptr
     );
+
+    if (*material.vk_cPipeline != nullptr) {
+      vk_computeBuffers[frameIndex].bindDescriptorSets(
+        vk::PipelineBindPoint::eCompute, material.vk_Layout, 0, sets, nullptr
+      );
+    }
   }
 
   if (material.constants != nullptr) {
     vk_commandBuffers[frameIndex].pushConstants(
       material.vk_Layout,
-      vk::ShaderStageFlagBits::eAllGraphics | vk::ShaderStageFlagBits::eCompute,
+      vk::ShaderStageFlagBits::eAll,
       0,
       vk::ArrayProxy<const char>(material.constantsSize, reinterpret_cast<const char *>(material.constants))
     );
+
+    if (*material.vk_cPipeline != nullptr) {
+      vk_computeBuffers[frameIndex].pushConstants(
+        material.vk_Layout,
+        vk::ShaderStageFlagBits::eAll,
+        0,
+        vk::ArrayProxy<const char>(material.constantsSize, reinterpret_cast<const char *>(material.constants))
+      );
+    }
   }
 
   vk_commandBuffers[frameIndex].bindVertexBuffers(0, *object.vk_buffers[0], { 0 });
   vk_commandBuffers[frameIndex].bindIndexBuffer(*object.vk_buffers[1], 0, vk::IndexType::eUint32);
 
   vk_commandBuffers[frameIndex].drawIndexed(object.indexCount, 1, 0, 0, 0);
+
+  if (*material.vk_cPipeline != nullptr) {
+    vk_computeBuffers[frameIndex].dispatch(
+      material.computeSpace[0], material.computeSpace[1], material.computeSpace[2]
+    );
+  }
 }
 
 void Renderer::endRendering(unsigned int imgIndex) {
@@ -339,6 +425,7 @@ void Renderer::endRendering(unsigned int imgIndex) {
   );
 
   vk_commandBuffers[frameIndex].end();
+  vk_computeBuffers[frameIndex].end();
 }
 
 } // namespace hlvl

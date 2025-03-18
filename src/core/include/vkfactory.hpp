@@ -32,7 +32,8 @@ class VulkanFactory {
     vk::raii::DeviceMemory,
     std::vector<vk::raii::Image>,
     std::vector<vk::raii::ImageView>,
-    std::vector<vk::raii::Sampler>
+    std::vector<vk::raii::Sampler>,
+    unsigned int
   >;
 
   using DepthOutput = std::tuple<
@@ -63,11 +64,11 @@ class VulkanFactory {
     static DescriptorPoolOutput newDescriptorPool(
       vk::DescriptorPoolCreateFlags,
       const std::vector<vk::raii::DescriptorSetLayout>&,
-      unsigned int,
+      std::pair<unsigned int, unsigned int>,
       unsigned int,
       unsigned int
     );
-    static TextureOutput newTextureAllocation(const std::vector<std::string>&);
+    static TextureOutput newTextureAllocation(const std::vector<std::string>&, unsigned int);
     static DepthOutput newDepthAllocation(unsigned int);
 
   private:

@@ -12,76 +12,63 @@
 #include <numbers>
 
 TEST_CASE( "end_to_end", "[endtoend]" ) {
-  struct Colors {
-    la::vec<3> colors[256];
+  static float aspectRatio = static_cast<float>(hlvl_settings.extent.width) / hlvl_settings.extent.height;
+  static float height = 0.2f * tanf(std::numbers::pi / 4);
+  static float width = aspectRatio * height;
+
+  struct Sphere {
+    float radius;
+    float emiss_str;
+    la::vec<3> position;
+    la::vec<3> color;
+    la::vec<3> emiss_color;
   };
 
-  struct Matrices {
-    la::mat<4> model = la::mat<4>::identity();
-    la::mat<4> view = la::mat<4>::view({ 0, 0, -2 }, { 0, 0, 0 }, { 0, -1, 0 });
-    la::mat<4> projection = la::mat<4>::projection(
-      std::numbers::pi / 2, hlvl_settings.extent.width / static_cast<float>(hlvl_settings.extent.height), 0.1, 10
-    );
+  struct SphereData {
+    unsigned int sphereCount = 5;
+    Sphere spheres[5] = {
+      { 20, 0, { 0.0, -21.0, 0.0 }, { 0.1, 0.05, 0.9 }, { 0.0, 0.0, 0.0 } },
+      { 1, 0, { 0.0, 0.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 } },
+      { 0.7, 0, { -3.0, 0.0, 0.0 }, { 0.0, 1.0, 0.0 }, { 0.0, 0.0, 0.0 } },
+      { 0.4, 0, { 2.0, 0.0, 0.0 }, { 0.0, 0.0, 1.0 }, { 0.0, 0.0, 0.0 } },
+      { 5, 5, { 5.0, 5.0, 5.0 }, { 0.0, 0.0, 0.0 }, { 0.65, 0.3, 0.1 }}
+    };
+  };
+
+  struct CameraInfo {
+    la::mat<4> view = la::mat<4>::view({ 0, 0, -3 }, { 0, 0, 0 });
   };
 
   struct PushConstants {
-    la::vec<3> color = { 0.0, 1.0, 0.0 };
+    la::vec<2, unsigned int> screenDims = { hlvl_settings.extent.width, hlvl_settings.extent.height };
+    la::vec<3> npDims = { width, height, 0.1f };
   };
-
-  Colors colors;
-  for (int i = 0; i < 256; ++i)
-    colors.colors[i] = { (float)(i < 85), (float)(i > 84 && i < 170), (float)(i > 169) };
-
-  PushConstants cubeConstants;
 
   hlvl::Context context;
 
-  REQUIRE( context.get_window() != nullptr );
-  REQUIRE( *context.get_instance() != nullptr );
-  REQUIRE( *context.get_surface() != nullptr );
-  REQUIRE( *context.get_physicalDevice() != nullptr );
-  REQUIRE( *context.get_device() != nullptr );
-  REQUIRE( !context.get_queueFamilies().empty() );
+  const unsigned int size = hlvl_settings.extent.width * hlvl_settings.extent.height;
 
-  hlvl::Resource cubeStorage(colors);
-  hlvl::Resource cubeMats(Matrices{});
+  hlvl::Resource sphereData(SphereData{});
+  hlvl::Resource cameraInfo(CameraInfo{});
+  PushConstants constants;
 
-  hlvl_materials.create(
-    hlvl::Material::builder("cube")
-      .add_shader(vk::ShaderStageFlagBits::eVertex, "shaders/cube.vert.spv")
-      .add_shader(vk::ShaderStageFlagBits::eFragment, "shaders/cube.frag.spv")
-      .add_texture("../tests/dat/eggplant.png")
-      .add_storage(vk::ShaderStageFlagBits::eFragment, &cubeStorage)
-      .add_uniform(vk::ShaderStageFlagBits::eVertex, &cubeMats)
-      .add_constants(sizeof(PushConstants), &cubeConstants)
+  hlvl_materials.create(hlvl::Material::builder("camera")
+    .add_shader(vk::ShaderStageFlagBits::eCompute, "shaders/camera.comp.spv")
+    .add_shader(vk::ShaderStageFlagBits::eVertex, "shaders/camera.vert.spv")
+    .add_shader(vk::ShaderStageFlagBits::eFragment, "shaders/camera.frag.spv")
+    .add_canvas()
+    .add_storage(vk::ShaderStageFlagBits::eCompute, &sphereData)
+    .add_uniform(vk::ShaderStageFlagBits::eCompute, &cameraInfo)
+    .add_constants(sizeof(PushConstants), &constants)
+    .compute_space((hlvl_settings.extent.width + 15) / 15, (hlvl_settings.extent.height + 15) / 15, 1)
   );
 
-  REQUIRE( *hlvl_materials["cube"].get_layout() != nullptr );
-  REQUIRE( *hlvl_materials["cube"].get_gPipeline() != nullptr );
-  REQUIRE( hlvl_materials["cube"].get_dsLayouts().size() == 3 );
-  REQUIRE( *hlvl_materials["cube"].get_dsPool() != nullptr );
-  REQUIRE( hlvl_materials["cube"].get_sets().size() == 3 );
-  REQUIRE( *hlvl_materials["cube"].get_texMem() != nullptr );
-  REQUIRE( hlvl_materials["cube"].get_images().size() == 1 );
-  REQUIRE( hlvl_materials["cube"].get_views().size() == 1 );
-  REQUIRE( hlvl_materials["cube"].get_samplers().size() == 1 );
-  REQUIRE( *hlvl_materials["cube"].get_sMem() != nullptr );
-  REQUIRE( hlvl_materials["cube"].get_sBufs().size() == 1 );
-  REQUIRE( *hlvl_materials["cube"].get_uMem() != nullptr );
-  REQUIRE( hlvl_materials["cube"].get_uBufs().size() == hlvl_settings.buffer_mode);
-  REQUIRE( hlvl_materials["cube"].get_constantsSize() == sizeof(PushConstants) );
-  REQUIRE( hlvl_materials["cube"].get_constants() != nullptr );
-
-  hlvl_objects.add(
-    hlvl::Object::builder()
-      .add_model("../tests/dat/cube.obj")
-      .add_material("cube")
+  hlvl_objects.add(hlvl::Object::builder()
+    .add_material("camera")
+    .add_model("../tests/dat/camera.obj")
   );
 
-  REQUIRE( *hlvl_objects.get_object(0).get_memory() != nullptr );
-  REQUIRE( hlvl_objects.get_object(0).get_buffers().size() == 2 );
-
-  context.run([&cubeMats, &cubeConstants](){
+  context.run([&cameraInfo]{
     static std::chrono::time_point currTime = std::chrono::steady_clock::now();
     static std::chrono::time_point prevTime = currTime;
     static float elapsedTime = 0;
@@ -90,14 +77,8 @@ TEST_CASE( "end_to_end", "[endtoend]" ) {
     elapsedTime += std::chrono::duration<float>(currTime - prevTime).count();
     prevTime = currTime;
 
-    cubeMats = { .model =
-      la::mat<4>::rotation({0, 2 * elapsedTime, 0 })
+    cameraInfo = CameraInfo{ .view =
+      la::mat<4>::view({ 5 * cosf(0.6 * elapsedTime), 0, 5 * sinf(0.6 * elapsedTime) }, { 0, 0, 0 })
     };
-
-    cubeConstants = {{
-      (float)cos(1.5 * elapsedTime + 4 * std::numbers::pi / 3) + 1.0f,
-      (float)cos(1.5 * elapsedTime) + 1.0f,
-      (float)cos(1.5 * elapsedTime + 2 * std::numbers::pi / 3) + 1.0f
-    }};
   });
 }
