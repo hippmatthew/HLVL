@@ -86,10 +86,10 @@ VulkanFactory::DescriptorPoolOutput VulkanFactory::newDescriptorPool(
 
   auto [texCount, imgCount] = imgCounts;
 
-  if (texCount != 0) {
+  if (!(texCount == 0 && imgCount == 0)) {
     poolSizes.emplace_back(vk::DescriptorPoolSize{
       .type             = vk::DescriptorType::eCombinedImageSampler,
-      .descriptorCount  = texCount * hlvl_settings.buffer_mode
+      .descriptorCount  = (texCount + imgCount) * hlvl_settings.buffer_mode
     });
   }
 
@@ -187,7 +187,7 @@ VulkanFactory::TextureOutput VulkanFactory::newTextureAllocation(const std::vect
       .arrayLayers  = 1,
       .samples      = vk::SampleCountFlagBits::e1,
       .tiling       = vk::ImageTiling::eOptimal,
-      .usage        = vk::ImageUsageFlagBits::eStorage,
+      .usage        = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eStorage,
       .sharingMode  = vk::SharingMode::eExclusive
     }));
   }
@@ -346,8 +346,6 @@ VulkanFactory::TextureOutput VulkanFactory::newTextureAllocation(const std::vect
       }
     }));
 
-    if (index++ > stagingBuffers.size() - 1) continue;
-
     vk::PhysicalDeviceProperties properties = Context::physicalDevice().getProperties();
 
     samplers.emplace_back(Context::device().createSampler(vk::SamplerCreateInfo{
@@ -366,55 +364,6 @@ VulkanFactory::TextureOutput VulkanFactory::newTextureAllocation(const std::vect
       .borderColor              = vk::BorderColor::eIntOpaqueBlack,
       .unnormalizedCoordinates  = false
     }));
-  }
-
-  if (imgCount != 0) {
-    auto [commandPool, commandBuffers] = newCommandPool(
-      Transfer, imgCount, vk::CommandPoolCreateFlagBits::eTransient
-    );
-
-    unsigned int index = stagingBuffers.size();
-
-    std::vector<vk::CommandBuffer> cmds;
-    for (auto& commandBuffer : commandBuffers) {
-      vk::ImageMemoryBarrier barrier{
-        .newLayout        = vk::ImageLayout::eGeneral,
-        .image            = images[index++],
-        .subresourceRange = {
-          .aspectMask     = vk::ImageAspectFlagBits::eColor,
-          .baseMipLevel   = 0,
-          .levelCount     = 1,
-          .baseArrayLayer = 0,
-          .layerCount     = 1
-        }
-      };
-
-      commandBuffer.begin({ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
-
-      commandBuffer.pipelineBarrier(
-        vk::PipelineStageFlagBits::eTopOfPipe,
-        vk::PipelineStageFlagBits::eComputeShader,
-        vk::DependencyFlags(),
-        nullptr,
-        nullptr,
-        barrier
-      );
-
-      commandBuffer.end();
-      cmds.emplace_back(commandBuffer);
-    }
-
-    vk::SubmitInfo barrierSubmit{
-      .commandBufferCount = static_cast<unsigned int>(cmds.size()),
-      .pCommandBuffers    = cmds.data()
-    };
-
-    vk::raii::Fence barrierFence = Context::device().createFence({});
-
-    Context::queue(Transfer).submit(barrierSubmit, barrierFence);
-
-    if (Context::device().waitForFences(*barrierFence, true, 1000000000ul) != vk::Result::eSuccess)
-      throw std::runtime_error("hlvl: hung waiting for barrier submit");
   }
 
   return { std::move(memory), std::move(images), std::move(views), std::move(samplers), stagingBuffers.size() };

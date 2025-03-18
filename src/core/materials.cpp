@@ -154,7 +154,14 @@ void Material::createLayout(MaterialBuilder& materialBuilder) {
         .binding          = binding++,
         .descriptorType   = vk::DescriptorType::eStorageImage,
         .descriptorCount  = 1,
-        .stageFlags       = vk::ShaderStageFlagBits::eCompute | vk::ShaderStageFlagBits::eFragment
+        .stageFlags       = vk::ShaderStageFlagBits::eCompute
+      });
+
+      bindings.emplace_back(vk::DescriptorSetLayoutBinding{
+        .binding          = binding++,
+        .descriptorType   = vk::DescriptorType::eCombinedImageSampler,
+        .descriptorCount  = 1,
+        .stageFlags       = vk::ShaderStageFlagBits::eFragment
       });
     }
 
@@ -483,7 +490,7 @@ void Material::createDescriptorSets(MaterialBuilder& materialBuilder) {
     }
 
     unsigned int j = materialBuilder.textures.size();
-    for (unsigned int k = materialBuilder.textures.size(); k < vk_images.size(); ++k) {
+    for (unsigned int k = j; k < vk_images.size(); ++k) {
       vk::DescriptorImageInfo imageInfo{
         .imageView    = vk_imageViews[k],
         .imageLayout  = vk::ImageLayout::eGeneral
@@ -494,6 +501,17 @@ void Material::createDescriptorSets(MaterialBuilder& materialBuilder) {
         .dstBinding       = j++,
         .descriptorCount  = 1,
         .descriptorType   = vk::DescriptorType::eStorageImage,
+        .pImageInfo       = &imageInfo
+      });
+
+      imageInfo.sampler = vk_samplers[k];
+      imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
+      writes.emplace_back(vk::WriteDescriptorSet{
+        .dstSet           = vk_descriptorSets[0][i],
+        .dstBinding       = j++,
+        .descriptorCount  = 1,
+        .descriptorType   = vk::DescriptorType::eCombinedImageSampler,
         .pImageInfo       = &imageInfo
       });
     }

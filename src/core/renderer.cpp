@@ -3,7 +3,6 @@
 #include "src/core/include/renderer.hpp"
 #include "src/core/include/settings.hpp"
 #include "src/core/include/vkfactory.hpp"
-#include "vulkan/vulkan_handles.hpp"
 
 #include <algorithm>
 #include <limits>
@@ -306,46 +305,46 @@ void Renderer::beginRendering(unsigned int imgIndex) {
 void Renderer::renderObject(const Object& object) {
   const auto& material = hlvl_materials[object.materialTag];
 
-  // if (material.hasCanvas) {
-  //   for (unsigned int i = material.canvasIndex; i < material.vk_images.size(); ++i) {
-  //     vk::ImageMemoryBarrier barrier{
-  //       .srcAccessMask    = vk::AccessFlagBits::eShaderRead,
-  //       .dstAccessMask    = vk::AccessFlagBits::eShaderWrite,
-  //       .newLayout        = vk::ImageLayout::eGeneral,
-  //       .image            = material.vk_images[i],
-  //       .subresourceRange = {
-  //         .aspectMask     = vk::ImageAspectFlagBits::eColor,
-  //         .baseMipLevel   = 0,
-  //         .levelCount     = 1,
-  //         .baseArrayLayer = 0,
-  //         .layerCount     = 1
-  //       }
-  //     };
+  if (material.hasCanvas) {
+    for (unsigned int i = material.canvasIndex; i < material.vk_images.size(); ++i) {
+      vk::ImageMemoryBarrier barrier{
+        .srcAccessMask    = vk::AccessFlagBits::eShaderRead,
+        .dstAccessMask    = vk::AccessFlagBits::eShaderWrite,
+        .newLayout        = vk::ImageLayout::eGeneral,
+        .image            = material.vk_images[i],
+        .subresourceRange = {
+          .aspectMask     = vk::ImageAspectFlagBits::eColor,
+          .baseMipLevel   = 0,
+          .levelCount     = 1,
+          .baseArrayLayer = 0,
+          .layerCount     = 1
+        }
+      };
 
-  //     vk_computeBuffers[frameIndex].pipelineBarrier(
-  //       vk::PipelineStageFlagBits::eTopOfPipe,
-  //       vk::PipelineStageFlagBits::eComputeShader,
-  //       vk::DependencyFlags(),
-  //       nullptr,
-  //       nullptr,
-  //       barrier
-  //     );
+      vk_computeBuffers[frameIndex].pipelineBarrier(
+        vk::PipelineStageFlagBits::eFragmentShader,
+        vk::PipelineStageFlagBits::eComputeShader,
+        vk::DependencyFlags(),
+        nullptr,
+        nullptr,
+        barrier
+      );
 
-  //     barrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
-  //     barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
-  //     barrier.oldLayout = vk::ImageLayout::eGeneral;
-  //     barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+      barrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
+      barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+      barrier.oldLayout = vk::ImageLayout::eGeneral;
+      barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
-  //     vk_commandBuffers[frameIndex].pipelineBarrier(
-  //       vk::PipelineStageFlagBits::eComputeShader,
-  //       vk::PipelineStageFlagBits::eFragmentShader,
-  //       vk::DependencyFlags(),
-  //       nullptr,
-  //       nullptr,
-  //       barrier
-  //     );
-  //   }
-  // }
+      vk_computeBuffers[frameIndex].pipelineBarrier(
+        vk::PipelineStageFlagBits::eComputeShader,
+        vk::PipelineStageFlagBits::eFragmentShader,
+        vk::DependencyFlags(),
+        nullptr,
+        nullptr,
+        barrier
+      );
+    }
+  }
 
   vk_commandBuffers[frameIndex].bindPipeline(vk::PipelineBindPoint::eGraphics, material.vk_gPipeline);
 

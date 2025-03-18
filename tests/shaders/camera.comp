@@ -1,7 +1,7 @@
 #version 460
 
-#define MAX_BOUNCES 10
-#define RAYS_PER_PIXEL 5
+#define MAX_BOUNCES 30
+#define RAYS_PER_PIXEL 10
 #define INF float(1 / 0)
 #define PI 3.1415926
 
@@ -33,13 +33,11 @@ layout(set = 1, binding = 0) readonly buffer sphere_data {
   Sphere spheres[];
 };
 
-layout(set = 2, binding = 0) uniform camera_info {
-  layout(row_major) mat4 view;
-};
-
 layout(push_constant) uniform push_constants {
+  uint frames;
   uvec2 screen_dims;
   vec3 np_dims;
+  layout(row_major) mat4 view;
 };
 
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
@@ -58,8 +56,22 @@ float normal_dist(inout uint state) {
 }
 
 vec3 direction(inout uint state, vec3 normal) {
-  vec3 dir = normalize(vec3(normal_dist(state), normal_dist(state), normal_dist(state)));
-  return dir * sign(dot(dir, normal));
+  return normalize(vec3(normal_dist(state), normal_dist(state), normal_dist(state)));
+}
+
+vec3 environment(Ray ray) {
+  vec3 sky_bot = vec3(0.6, 0.4, 0.2);
+  vec3 sky_top = vec3(0.1, 0.2, 0.9);
+  vec3 ground = vec3(0.6, 0.6, 0.6);
+  vec3 sun_dir = normalize(vec3(6, 1, 30));
+
+  float sky_param = pow(smoothstep(0, 0.2, ray.dir.y), 0.35);
+  vec3 sky_grad = mix(sky_bot, sky_top, sky_param);
+  float sun = pow(max(0, dot(ray.dir, sun_dir)), 1.7) * 3;
+
+  float ground_param = smoothstep(-0.01, 0, ray.dir.y);
+  float sun_mask = float(ground_param >= 0.01);
+  return mix(ground, sky_grad, ground_param) + sun * sun_mask;
 }
 
 HitInfo ray_sphere(Ray ray, Sphere sphere) {
@@ -106,10 +118,13 @@ vec3 trace_ray(Ray ray, inout uint state) {
 
   for (int i = 0; i < MAX_BOUNCES; ++i) {
     HitInfo info = get_collision(ray);
-    if (!info.valid) break;
+    if (!info.valid) {
+      light += environment(ray) * color;
+      break;
+    }
 
     ray.origin = info.pos;
-    ray.dir = direction(state, info.norm);
+    ray.dir = normalize(info.norm + direction(state, info.norm));
 
     Sphere sphere = spheres[info.index];
 
@@ -125,7 +140,7 @@ vec3 trace_ray(Ray ray, inout uint state) {
 void main() {
   ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
   uint index = coord.y * screen_dims.x + coord.x;
-  uint state = index;
+  uint state = index + frames * 759325471;
 
   mat4 world = inverse(view);
   vec2 uv = vec2(coord) / screen_dims;
@@ -141,7 +156,10 @@ void main() {
   }
   color /= RAYS_PER_PIXEL;
 
-  color = (color + imageLoad(color_data, coord).rgb) / 2;
+  float weight = 1.0 / (frames + 1);
+  vec3 prev_color = imageLoad(color_data, coord).rgb;
+
+  color = prev_color * (1 - weight) + color * weight;
 
   imageStore(color_data, coord, vec4(color, 1.0));
 }
